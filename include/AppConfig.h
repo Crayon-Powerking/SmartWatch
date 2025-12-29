@@ -12,4 +12,6 @@
 // 注意：SDA(23) 和 SCL(18) 是硬件默认引脚，不需要在这里定义
 
 // --- 输入设备引脚 ---
-#define PIN_BTN_BOOT  0  // ESP32 开发板自带的 BOOT 按钮
+#define PIN_BTN_SELECT  0   // 板载按键 -> 确认/切换
+#define PIN_BTN_UP    13  // D13 -> 增加
+#define PIN_BTN_DOWN  14  // D14 -> 减少

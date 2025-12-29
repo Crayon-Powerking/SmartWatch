@@ -1,20 +1,17 @@
 #include "InputHAL.h"
 
-InputHAL::InputHAL() : btnBoot(PIN_BTN_BOOT, true, true) {
+InputHAL::InputHAL(uint8_t pin) : btn(pin, true, true) {
 }
 
 void InputHAL::begin() {
-    btnBoot.setPressMs(1000); // 长按阈值 1s
+    btn.setPressMs(1000); // 长按阈值 1s
 
-    // --- 核心魔法区 ---
-    // OneButton 支持 attachClick(函数, 上下文指针)
-    // 我们把 'this' (当前对象的地址) 传进去
-    btnBoot.attachClick(_staticClickHandler, this);
-    btnBoot.attachLongPressStart(_staticLongPressHandler, this);
+    btn.attachClick(_staticClickHandler, this);
+    btn.attachLongPressStart(_staticLongPressHandler, this);
 }
 
 void InputHAL::tick() {
-    btnBoot.tick();
+    btn.tick();
 }
 
 void InputHAL::attachClick(EventCallback cb) {
@@ -25,25 +22,17 @@ void InputHAL::attachLongPress(EventCallback cb) {
     _onLongPressCb = cb;
 }
 
-// --- 静态跳板实现 ---
-
+// --- 静态跳板函数的实现 ---
+// 这里的 scope 就是 begin() 里传进去的 'this'
 void InputHAL::_staticClickHandler(void* scope) {
-    if (scope == nullptr) return;
-
-    // 1. 把 void* 还原回 InputHAL* 指针
-    InputHAL* self = static_cast<InputHAL*>(scope);
-
-    // 2. 通过还原的指针，调用具体的成员变量
-    if (self->_onClickCb) {
-        self->_onClickCb();
+    if (scope) {
+        // 把 void* 还原成 InputHAL*，然后调用成员变量
+        static_cast<InputHAL*>(scope)->_onClickCb();
     }
 }
 
 void InputHAL::_staticLongPressHandler(void* scope) {
-    if (scope == nullptr) return;
-
-    InputHAL* self = static_cast<InputHAL*>(scope);
-    if (self->_onLongPressCb) {
-        self->_onLongPressCb();
+    if (scope) {
+        static_cast<InputHAL*>(scope)->_onLongPressCb();
     }
 }

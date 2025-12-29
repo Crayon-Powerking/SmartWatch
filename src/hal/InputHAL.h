@@ -10,7 +10,9 @@ public:
     // 定义一个通用的回调函数类型：不接受参数，返回 void
     using EventCallback = std::function<void()>;
 
-    InputHAL();
+    // 构造函数：需要传入引脚号
+    InputHAL(uint8_t pin); 
+
     void begin();
     void tick();
 
@@ -19,7 +21,7 @@ public:
     void attachLongPress(EventCallback cb);
 
 private:
-    OneButton btnBoot;
+    OneButton btn;
 
     // --- 内部存储的回调 ---
     EventCallback _onClickCb = nullptr;
