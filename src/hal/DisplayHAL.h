@@ -1,30 +1,36 @@
 #pragma once
-
 #include <U8g2lib.h>
 #include "AppConfig.h"
 
-/**
- * @brief 屏幕硬件抽象层 (Hardware Abstraction Layer)
- * @note  封装 U8g2 库，向业务层提供统一的绘图接口
- */
 class DisplayHAL {
 public:
-    // 构造函数
     DisplayHAL();
-
-    // 初始化屏幕 (上电后必须调用)
     void begin();
+    void clear();
+    void update();
 
-    // --- 显存操作 ---
-    void clear();   // 清空缓冲区
-    void update();  // 将缓冲区内容发送到物理屏幕 (U8g2 buffer -> Screen)
-
-    // --- 绘图原语 (根据未来需求不断扩展) ---
+    // --- 字体与文本 ---
+    // 允许传入 u8g2 的字体数据 (const uint8_t*)
+    void setFont(const uint8_t* font);
+    // 获取文字宽度 (用于居中计算)
+    int getStrWidth(const char* text);
     void drawText(int x, int y, const char* text);
-    // 未来可扩展: drawIcon(), drawLine(), setBrightness()...
+
+    // --- 图形绘制 ---
+
+    // 画单个图标位图 (比如脚印图标)
+    void drawIcon(int x, int y, int w, int h, const uint8_t* bitmap);
+    
+    // 画单个图标字符 (比如 Open Iconic 里的 ID)
+    void drawGlyph(int x, int y, uint16_t encoding);
+    
+    // 画空心框 (电池外壳)
+    void drawFrame(int x, int y, int width, int height);
+    // 画实心块 (电池电量)
+    void drawBox(int x, int y, int width, int height);
+    // 画线 (分割线)
+    void drawLine(int x1, int y1, int x2, int y2);
 
 private:
-    // 组合优于继承：我们将 U8g2 对象作为私有成员藏起来
-    // 使用 F_4W_HW_SPI 模式：全缓冲区(F) + 4线硬件SPI
     U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2;
 };

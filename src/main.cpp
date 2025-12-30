@@ -2,9 +2,8 @@
 #include "AppConfig.h"
 #include "hal/DisplayHAL.h"
 #include "hal/InputHAL.h"
-#include "service/StorageService.h"
 #include "view/PageManager.h"
-// 引入新服务
+#include "service/StorageService.h"
 #include "service/NetworkService.h"
 
 // 实例化模块

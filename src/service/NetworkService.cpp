@@ -42,7 +42,7 @@ String NetworkService::getTimeString() {
     struct tm timeinfo;
     // getLocalTime 会尝试从系统内核读取时间
     // 如果还没同步成功，它会返回 false
-    if(!getLocalTime(&timeinfo)){
+    if(!getLocalTime(&timeinfo,0)){
         return "--:--"; // 还没获取到时间
     }
 
@@ -55,7 +55,7 @@ String NetworkService::getTimeString() {
 
 int NetworkService::getSecond() {
     struct tm timeinfo;
-    if(!getLocalTime(&timeinfo)){
+    if(!getLocalTime(&timeinfo,0)){
         return 0;
     }
     return timeinfo.tm_sec;
