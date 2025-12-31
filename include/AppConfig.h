@@ -15,3 +15,19 @@
 #define PIN_BTN_SELECT  0   // 板载按键 -> 确认/切换
 #define PIN_BTN_UP    13  // D13 -> 增加
 #define PIN_BTN_DOWN  14  // D14 -> 减少
+
+// --- 用户配置 (User Configuration) ---
+// 以后要改密码，只改这一个文件，不动 main.cpp
+#define WIFI_SSID     "8513"
+#define WIFI_PASS     "ai123456"
+
+#define WEATHER_KEY   "SvagmpHNnsfuweKoz"
+#define WEATHER_CITY  "Chengdu"
+
+// 1. 自动保存间隔 (毫秒)
+// 比如：5分钟 = 5 * 60 * 1000 = 300000
+#define CONFIG_AUTO_SAVE_INTERVAL  300000 
+
+// 2. 天气更新检查间隔 (毫秒)
+// 比如：1小时 = 3600 * 1000
+#define CONFIG_WEATHER_INTERVAL    3600000

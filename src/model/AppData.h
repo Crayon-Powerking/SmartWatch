@@ -1,22 +1,20 @@
 #pragma once
+#include <Arduino.h>
 
 // 定义数据模型结构体
 struct AppDataModel {
-    // 1. 运动数据
-    int stepCount = 0;
-    
-    // 2. 模拟电量 (0-100)
-    int batteryLevel = 80; 
-
-    // 3. UI 状态
-    // 0 = 步数页, 1 = 电量页
-    int currentScreen = 0; 
-    
+    int stepCount = 0;           // 步数
+    int batteryLevel = 0;       // 电量百分比
+    int currentScreen = 0;       // 当前屏幕索引
+    int temperature = 0;         // 当前温度
+    int weatherCode = 99;        // 天气代码，99表示未知
+    time_t lastWeatherTime = 0;  // 上次获取天气的时间戳
     // 构造函数: 给个初值
     AppDataModel() {
         stepCount = 0;
         batteryLevel = 80;
         currentScreen = 0;
+        temperature = 0;
     }
 };
 

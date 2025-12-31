@@ -14,7 +14,7 @@ public:
         // 1. 顶部 Header
         // ==========================================
         display->setFont(u8g2_font_6x10_tf);
-        display->drawText(2, 9, "12-30 Mon"); 
+        display->drawText(2, 9, network.getDateString().c_str());
 
         // --- WiFi 图标 ---
         if (network.isConnected()) {
@@ -61,10 +61,13 @@ public:
 
         // --- 左侧：天气 ---
         display->setFont(u8g2_font_open_iconic_weather_2x_t); // 必须切到 Weather 字库
-        display->drawGlyph(4, footerY, 69); // 69 = 太阳 ('E')
+        int iconChar = getIconChar(AppData.weatherCode);
+        display->drawGlyph(4, footerY, iconChar);
         
-        display->setFont(u8g2_font_ncenB08_tr); // 切回文字
-        display->drawText(24, footerY - 1, "26 C"); // y-1 为了微调对齐
+        char tempStr[16];
+        display->setFont(u8g2_font_ncenB08_tr);
+        sprintf(tempStr, "%d C", AppData.temperature); // 从 AppData 读
+        display->drawText(24, footerY - 1, tempStr);
 
         // --- 右侧：步数 ---
         // 1. 先设置字体，因为需要计算数字的像素宽度
@@ -73,23 +76,27 @@ public:
         sprintf(stepStr, "%d", AppData.stepCount);
         int stepW = display->getStrWidth(stepStr);
         // 2. 计算坐标
-        // 图标固定在最右侧：屏幕宽(128) - 图标宽(16) - 右边距(2)
         int iconX = 128 - 16 - 2; 
-        // 文字坐标：在图标的左边 -> 图标X - 文字宽 - 间距(2)
         int textX = iconX - stepW - 2;
 
-        // 3. 绘制
-        // 图标 (假设 icon_footprint_16 是 16x16)
         display->drawIcon(iconX, 48, 16, 16, icon_footprint_16);
-        
-        // 文字
         display->drawText(textX, footerY - 1, stepStr);
-
-        // 分割线
         display->drawLine(0, 12, 128, 12);
     }
 
     void onButton(int id) override {
         // ...
+    }
+private:
+    // 将 code 转为 u8g2 字符的简单函数
+    int getIconChar(int weatherCode) {
+        // 0-3: 晴 -> 69 ('E')
+        if (weatherCode <= 3) return 69; 
+        // 4-9: 云 -> 64 ('@')
+        if (weatherCode <= 9) return 64;
+        // 10-18: 雨 -> 67 ('C')
+        if (weatherCode <= 18) return 67;
+        // 其他 -> 69
+        return 69;
     }
 };
