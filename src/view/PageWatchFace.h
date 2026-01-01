@@ -90,7 +90,7 @@ private:
     // 所以这里直接问芯片要时间，不需要问 NetworkService
     String getTimeString() {
         struct tm timeinfo;
-        if(!getLocalTime(&timeinfo, 0)) return "--:--";
+        if(!getLocalTime(&timeinfo, 0)) return "13:14";
         char buf[10];
         sprintf(buf, "%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
         return String(buf);
@@ -98,7 +98,7 @@ private:
 
     String getDateString() {
         struct tm timeinfo;
-        if(!getLocalTime(&timeinfo, 0)) return "01-01 Mon";
+        if(!getLocalTime(&timeinfo, 0)) return "05-20 Mon";
         char buf[32];
         strftime(buf, 32, "%m-%d %a", &timeinfo);
         return String(buf);

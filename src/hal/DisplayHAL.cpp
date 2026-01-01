@@ -8,7 +8,7 @@ void DisplayHAL::begin() {
     u8g2.begin();
     u8g2.setFont(u8g2_font_ncenB10_tr); 
     u8g2.enableUTF8Print();
-    u8g2.setFontMode(1); // 透明背景
+    u8g2.setFontMode(1); 
 }
 
 void DisplayHAL::clear() {
@@ -18,6 +18,16 @@ void DisplayHAL::clear() {
 void DisplayHAL::update() {
     u8g2.sendBuffer();
 }
+
+// --- 新增的实现 ---
+void DisplayHAL::setClipWindow(int x0, int y0, int x1, int y1) {
+    u8g2.setClipWindow(x0, y0, x1, y1);
+}
+
+void DisplayHAL::setMaxClipWindow() {
+    u8g2.setMaxClipWindow();
+}
+// ------------------
 
 void DisplayHAL::setFont(const uint8_t* font) {
     u8g2.setFont(font);
