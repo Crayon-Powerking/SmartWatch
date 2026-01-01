@@ -1,9 +1,6 @@
 #pragma once
 #include "Page.h"
 #include "PageWatchFace.h" 
-// #include "PageSteps.h"   <-- 删掉
-// #include "PageBattery.h" <-- 删掉
-// #include "PageAbout.h"   <-- 删掉
 #include <vector>
 
 class PageManager {
