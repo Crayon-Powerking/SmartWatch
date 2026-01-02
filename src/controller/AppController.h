@@ -2,6 +2,7 @@
 #include "AppConfig.h"
 #include "model/AppData.h"
 #include "model/MenuTypes.h"
+#include "model/AppBase.h" // 【新增】 引入 App 基类
 #include <vector>
 #include "hal/DisplayHAL.h"
 #include "hal/InputHAL.h"
@@ -11,7 +12,7 @@
 // 引入视图
 #include "view/PageWatchFace.h"
 #include "view/PageHorizontalMenu.h" 
-#include "view/PageVerticalMenu.h"   // 【新增】 引入垂直列表视图
+#include "view/PageVerticalMenu.h"
 #include "view/SystemToast.h"
 #include "controller/MenuController.h"
 
@@ -24,49 +25,62 @@ class AppController {
     friend class MenuFactory;
     friend class SettingsBuilder;
     friend class GamesBuilder;
+    // 【新增】允许 AppBase 访问 (例如游戏退出时调用 app->quitApp())
+    friend class AppBase; 
 
 public:
     AppController(); 
     void begin();
     void tick();
 
+    // 【新增】应用调度接口
+    void startApp(AppBase* app); // 启动一个 App
+    void quitApp();              // 退出当前 App
+
+    // 【新增】延迟重载请求 (修复崩溃 bug)
+    void scheduleReload() { reloadPending = true; }
+
+    // 公开成员，方便 App 访问硬件 (或者通过 friend)
+    MenuController menuCtrl; 
+    StorageService storage;
+    NetworkService network;
+
 private:
     SystemToast toast;
 
     // --- 内部私有函数 ---
-    void destroyMenuTree();       // 销毁旧菜单
-    void checkWeather();          // 智能检查天气
-    void render();                // 统一渲染入口
-    void checkDayChange();        // 检查日期变化，重置步数
+    void destroyMenuTree();       
+    void checkWeather();          
+    void render();                
+    void checkDayChange();        
     
-    // --- 核心模块 ---
-    NetworkService network;
-    StorageService storage;
-    MenuController menuCtrl; // 菜单逻辑核心
-
     // --- 视图渲染器 ---
-    PageWatchFace watchFace;       // 表盘
-    PageHorizontalMenu pageHorizontal; // 【重命名】 横向画师 (原 menuView)
-    PageVerticalMenu   pageVertical;   // 【新增】   纵向画师
+    PageWatchFace watchFace;       
+    PageHorizontalMenu pageHorizontal; 
+    PageVerticalMenu   pageVertical;   
 
     // --- 菜单数据 (Model) ---
     MenuPage* rootMenu = nullptr;
     MenuPage* toolsMenu = nullptr;
 
     // --- 状态标志 ---
-    bool inMenuMode = false;      // 当前是在看菜单吗？
+    bool inMenuMode = false;      
+    // 【新增】当前是否正在运行独立 App (游戏)
+    AppBase* currentApp = nullptr; 
+
+    // 【新增】重载标志位
+    bool reloadPending = false;
+
     unsigned long timerWeather = 0;
     unsigned long timerSave = 0;
 
-    // 【新增】后台任务相关
-    TaskHandle_t weatherTaskHandle = NULL; // 任务句柄
-    static void weatherTask(void* parameter); // 静态任务函数
+    // 后台任务相关
+    TaskHandle_t weatherTaskHandle = NULL; 
+    static void weatherTask(void* parameter); 
 
-    // 【核心新增】页面垃圾回收站
-    // 用于追踪所有 new 出来的 MenuPage，确保 destroy 时能全部删干净
+    // 页面垃圾回收站
     std::vector<MenuPage*> pageList; 
 
-    // 辅助函数：创建一个新页面并自动注册到垃圾回收站
     MenuPage* createPage(const char* title, MenuLayout layout = LAYOUT_LIST) {
         MenuPage* p = new MenuPage(title, layout);
         pageList.push_back(p);

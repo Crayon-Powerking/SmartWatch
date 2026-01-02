@@ -22,6 +22,9 @@ void AppController::begin() {
     
     // [SELECT 单击]
     btnSelect.attachClick([this](){
+        // 如果正在玩游戏，拦截系统按键
+        if (currentApp) return; 
+
         if (!inMenuMode) {
             inMenuMode = true;
             if (rootMenu && !rootMenu->items.empty()) {
@@ -35,6 +38,8 @@ void AppController::begin() {
 
     // [SELECT 长按]
     btnSelect.attachLongPress([this](){
+        if (currentApp) return; // 拦截
+
         if (inMenuMode) {
             if (!menuCtrl.back()) inMenuMode = false;
         } else {
@@ -45,6 +50,8 @@ void AppController::begin() {
 
     // [UP 连发]
     btnUp.attachDuringLongPress([this](){
+        if (currentApp) return; // 拦截
+
         if (inMenuMode) {
             static unsigned long lastTrig = 0;
             if (millis() - lastTrig > 150) {
@@ -56,6 +63,8 @@ void AppController::begin() {
 
     // [UP 单击]
     btnUp.attachClick([this](){
+        if (currentApp) return; // 拦截
+
         if (inMenuMode) menuCtrl.prev();
         else {
             watchFace.onButton(EVENT_KEY_UP);
@@ -64,6 +73,8 @@ void AppController::begin() {
 
     // [DOWN 连发]
     btnDown.attachDuringLongPress([this](){
+        if (currentApp) return; // 拦截
+
         if (inMenuMode) {
             static unsigned long lastTrig = 0;
             if (millis() - lastTrig > 150) {
@@ -75,6 +86,8 @@ void AppController::begin() {
 
     // [DOWN 单击]
     btnDown.attachClick([this](){
+        if (currentApp) return; // 拦截
+
         if (inMenuMode) menuCtrl.next();
         else {
             watchFace.onButton(EVENT_KEY_DOWN);
@@ -86,9 +99,6 @@ void AppController::begin() {
     timerSave = millis();
 }
 
-// ------------------------------------------------------------
-// 【成熟方案】彻底销毁所有页面，杜绝内存泄漏
-// ------------------------------------------------------------
 void AppController::destroyMenuTree() {
     for (auto page : pageList) {
         delete page;
@@ -98,8 +108,73 @@ void AppController::destroyMenuTree() {
     menuCtrl.init(nullptr);
 }
 
+// 启动 App
+void AppController::startApp(AppBase* app) {
+    if (currentApp) return; // 防止重复启动
+    
+    inMenuMode = false; // 退出菜单模式
+    currentApp = app;
+    
+    // 调用 App 的生命周期 setup，并传入 controller 指针
+    if (currentApp) {
+        currentApp->onRun(this);
+    }
+}
+
+// 退出 App
+void AppController::quitApp() {
+    if (!currentApp) return;
+
+    // 1. 调用 App 清理接口
+    currentApp->onExit();
+    
+    // 2. 释放内存
+    delete currentApp;
+    currentApp = nullptr;
+
+    // 3. 恢复到菜单模式
+    inMenuMode = true; 
+    menuCtrl.init(rootMenu);
+    
+    // 强制刷新一次显存，防止残影
+    display.clear();
+    display.update();
+}
+
 void AppController::tick() {
+    // --------------------------------------------------------
+    // 安全重载检查 (SettingsBuilder 触发)
+    // --------------------------------------------------------
+    if (reloadPending) {
+        reloadPending = false;
+        destroyMenuTree();
+        MenuFactory::build(this); // 重建
+        
+        // 重置到主菜单
+        inMenuMode = true;
+        menuCtrl.init(rootMenu);
+        return; 
+    }
+
     delay(1); 
+
+    // --------------------------------------------------------
+    // App 独立运行模式 (游戏)
+    // --------------------------------------------------------
+    if (currentApp) {
+        // 执行 App 循环，并检查返回值
+        // 如果 App 返回非 0 (例如 1)，则代表请求退出
+        int status = currentApp->onLoop();
+        
+        if (status != 0) {
+            quitApp();
+        } else {
+            network.tick(); // 保持网络心跳
+        }
+        return; // 跳过后续的系统渲染
+    }
+
+    // --- 以下是常规系统模式 (表盘/菜单) ---
 
     network.tick();
     AppData.isWifiConnected = network.isConnected();
@@ -145,15 +220,19 @@ void AppController::tick() {
     }
 }
 
+// 【关键修复】: 之前缺失的 checkWeather 实现
 void AppController::checkWeather() {
+    // 防止重复创建任务
     if (weatherTaskHandle != NULL) return; 
+    
+    // 创建 FreeRTOS 任务获取天气
+    // 堆栈大小 4096, 优先级 1
     xTaskCreate(weatherTask, "WeatherTask", 4096, this, 1, &weatherTaskHandle);
 }
 
 void AppController::weatherTask(void* parameter) {
     AppController* app = (AppController*)parameter;
     WeatherResult res = app->network.fetchWeather(WEATHER_KEY, WEATHER_CITY);
-    
     if (res.success) {
         AppData.temperature = res.temperature;
         AppData.weatherCode = res.code;
@@ -187,38 +266,31 @@ void AppController::checkDayChange() {
 }
 
 void AppController::render() {
+    // 【防御】如果有 App 运行，系统不应该干扰显存
+    if (currentApp) return;
+
     display.clear(); // 清屏
 
     if (inMenuMode) {
-        // 1. 获取当前要显示的页面
         MenuPage* currentPage = menuCtrl.getCurrentPage();
-        
-        // 2. 获取动画过渡值
         float visualIndex = menuCtrl.getVisualIndex();
         
         if (currentPage) {
-            // === 核心判断：根据页面类型选择画师 ===
             if (currentPage->layout == LAYOUT_ICON) {
-                // A. 横向画师 (一级菜单)
                 pageHorizontal.setMenu(currentPage);
                 pageHorizontal.setVisualIndex(visualIndex);
                 pageHorizontal.draw(&display);
             } 
             else {
-                // B. 纵向画师 (二级菜单)
                 pageVertical.setMenu(currentPage);
                 pageVertical.setVisualIndex(visualIndex);
                 pageVertical.draw(&display);
             }
         }
     } else {
-        // 3. 不在菜单模式 -> 画表盘
         watchFace.draw(&display);
     }
 
-    // 绘制全局 Toast (弹窗)
     toast.draw(&display);
-    
-    // 推送显存
     display.update();
 }
