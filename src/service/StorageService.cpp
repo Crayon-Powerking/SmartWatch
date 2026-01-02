@@ -14,6 +14,7 @@ void StorageService::load() {
     AppData.weatherCode = prefs.getInt("w_code", 99);
     AppData.lastWeatherTime = prefs.getLong("w_time", 0);
     AppData.lastStepDayCode = prefs.getInt("step_day", 0);
+    AppData.languageIndex = prefs.getInt("lang", 0);
 }
 
 void StorageService::save() {
@@ -43,5 +44,9 @@ void StorageService::save() {
     long currentTime = (long)AppData.lastWeatherTime;
     if (prefs.getLong("w_time", 0) != currentTime) {
         prefs.putLong("w_time", currentTime);
+    }
+
+    if (prefs.getInt("lang", 0) != AppData.languageIndex) {
+        prefs.putInt("lang", AppData.languageIndex); // 保存语言
     }
 }

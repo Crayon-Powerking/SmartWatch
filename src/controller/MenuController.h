@@ -49,15 +49,27 @@ public:
         }
     }
 
+    // [按键触发] 进入当前选中的子菜单或执行动作
     void enter() {
         if (!current || current->items.empty()) return;
         MenuItem& item = current->items[current->selectedIndex];
         if (item.action) item.action();
     }
 
+    // [代码触发] 强制跳转到指定页面 (解决报错的核心函数)
+    void enter(MenuPage* subPage) {
+        navigateTo(subPage);
+    }
+
+    // 底层跳转实现
     void navigateTo(MenuPage* subPage) {
         if (!subPage) return;
-        menuStack.push_back(current);
+        
+        // 只有当 subPage 不是当前页面时才压栈，防止重复
+        if (current != subPage) {
+            menuStack.push_back(current);
+        }
+        
         current = subPage;
         // 切换页面时，重置视觉索引
         visualIndex = (float)current->selectedIndex;
@@ -78,6 +90,6 @@ private:
     MenuPage* current = nullptr;
     std::vector<MenuPage*> menuStack;
     
-    // 新增：动画用的浮点数索引
+    // 动画用的浮点数索引
     float visualIndex = 0.0;
 };

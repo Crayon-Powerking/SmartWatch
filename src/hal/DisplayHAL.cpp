@@ -34,11 +34,11 @@ void DisplayHAL::setFont(const uint8_t* font) {
 }
 
 int DisplayHAL::getStrWidth(const char* text) {
-    return u8g2.getStrWidth(text);
+    return u8g2.getUTF8Width(text);
 }
 
 void DisplayHAL::drawText(int x, int y, const char* text) {
-    u8g2.drawStr(x, y, text);
+    u8g2.drawUTF8(x, y, text);
 }
 
 void DisplayHAL::drawGlyph(int x, int y, uint16_t encoding) {
@@ -59,4 +59,8 @@ void DisplayHAL::drawLine(int x1, int y1, int x2, int y2) {
 
 void DisplayHAL::drawIcon(int x, int y, int w, int h, const uint8_t* bitmap) {
     u8g2.drawXBMP(x, y, w, h, bitmap);
+}
+
+void DisplayHAL::setDrawColor(uint8_t color) {
+    u8g2.setDrawColor(color);
 }

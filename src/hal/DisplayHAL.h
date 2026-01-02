@@ -26,6 +26,7 @@ public:
     void drawFrame(int x, int y, int width, int height);
     void drawBox(int x, int y, int width, int height);
     void drawLine(int x1, int y1, int x2, int y2);
+    void setDrawColor(uint8_t color);
 
 private:
     U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2;

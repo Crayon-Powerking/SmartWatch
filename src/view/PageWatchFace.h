@@ -56,19 +56,19 @@ public:
         // --- 天气 ---
         display->setFont(u8g2_font_open_iconic_weather_2x_t); 
         int iconChar = getIconChar(AppData.weatherCode);
-        display->drawGlyph(4, footerY, iconChar); 
+        display->drawGlyph(0, footerY, iconChar); 
         
         display->setFont(u8g2_font_ncenB08_tr); 
         char tempStr[16];
         sprintf(tempStr, "%d C", AppData.temperature); 
-        display->drawText(24, footerY - 1, tempStr);
+        display->drawText(18, footerY - 1, tempStr);
 
         // --- 步数 ---
         display->setFont(u8g2_font_ncenB08_tr);
         char stepStr[16];
         sprintf(stepStr, "%d", AppData.stepCount);
         int stepW = display->getStrWidth(stepStr);
-        int iconX = 128 - 16 - 2; 
+        int iconX = 128 - 16; 
         int textX = iconX - stepW - 2;
 
         display->drawIcon(iconX, 48, 16, 16, icon_footprint_16);

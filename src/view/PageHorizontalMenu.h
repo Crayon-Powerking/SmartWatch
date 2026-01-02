@@ -109,7 +109,7 @@ private:
         // 5. 绘制文字 (逻辑不变，只显示最中心的)
         // 文字不需要跟着下沉，因为它只在图标到达中心最高点时才显示
         if (abs(index - visualIndex) < 0.25) {
-            display->setFont(u8g2_font_ncenB08_tr);
+            display->setFont(u8g2_font_wqy12_t_gb2312);
             int strW = display->getStrWidth(item.title.c_str());
             // 文字固定在底部
             display->drawText((int)centerX - (strW / 2), 62, item.title.c_str());

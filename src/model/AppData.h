@@ -13,6 +13,7 @@ struct AppDataModel {
     int lastStepDayCode = 0;     // 上次记录步数的日期代码 (格式: YYYYMMDD)
     
     bool isWifiConnected = false;// WiFi 连接状态
+    int languageIndex = 0;
 };
 
 // 声明一个全局变量，让所有文件都能找到它
