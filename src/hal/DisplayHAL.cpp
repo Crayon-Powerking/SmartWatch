@@ -33,6 +33,10 @@ void DisplayHAL::setFont(const uint8_t* font) {
     u8g2.setFont(font);
 }
 
+void DisplayHAL::setFontMode(uint8_t mode) {
+    u8g2.setFontMode(mode);
+}
+
 int DisplayHAL::getStrWidth(const char* text) {
     return u8g2.getUTF8Width(text);
 }
@@ -51,6 +55,10 @@ void DisplayHAL::drawFrame(int x, int y, int width, int height) {
 
 void DisplayHAL::drawBox(int x, int y, int width, int height) {
     u8g2.drawBox(x, y, width, height);
+}
+
+void DisplayHAL::drawRBox(int x, int y, int width, int height, int radius) {
+    u8g2.drawRBox(x, y, width, height, radius);
 }
 
 void DisplayHAL::drawLine(int x1, int y1, int x2, int y2) {

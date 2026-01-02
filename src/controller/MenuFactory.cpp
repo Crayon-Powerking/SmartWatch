@@ -30,6 +30,7 @@ void MenuFactory::build(AppController* app) {
     gamePage->add("Dino Run", [](){ Serial.println("Dino"); });
     gamePage->add("2048", [](){ Serial.println("2048"); });
     gamePage->add("Flappy Bird", [](){ Serial.println("Flappy"); });
+    gamePage->add("Flappy Bird1234567891011121314", [](){ Serial.println("Flappy"); });
 
     // --- 设置页 (带图标的列表) ---
     // 列表模式下，如果有图标，PageVerticalMenu 会自动处理 (图标在左，文字在右)
