@@ -187,14 +187,38 @@ void AppController::checkDayChange() {
 }
 
 void AppController::render() {
-    display.clear();
+    display.clear(); // 清屏
+
     if (inMenuMode) {
-        menuView.setMenu(menuCtrl.getCurrentPage());
-        menuView.setVisualIndex(menuCtrl.getVisualIndex());
-        menuView.draw(&display);
+        // 1. 获取当前要显示的页面
+        MenuPage* currentPage = menuCtrl.getCurrentPage();
+        
+        // 2. 获取动画过渡值
+        float visualIndex = menuCtrl.getVisualIndex();
+        
+        if (currentPage) {
+            // === 核心判断：根据页面类型选择画师 ===
+            if (currentPage->layout == LAYOUT_ICON) {
+                // A. 横向画师 (一级菜单)
+                pageHorizontal.setMenu(currentPage);
+                pageHorizontal.setVisualIndex(visualIndex);
+                pageHorizontal.draw(&display);
+            } 
+            else {
+                // B. 纵向画师 (二级菜单)
+                pageVertical.setMenu(currentPage);
+                pageVertical.setVisualIndex(visualIndex);
+                pageVertical.draw(&display);
+            }
+        }
     } else {
+        // 3. 不在菜单模式 -> 画表盘
         watchFace.draw(&display);
     }
+
+    // 绘制全局 Toast (弹窗)
     toast.draw(&display);
+    
+    // 推送显存
     display.update();
 }

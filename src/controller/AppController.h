@@ -2,9 +2,7 @@
 #include "AppConfig.h"
 #include "model/AppData.h"
 #include "model/MenuTypes.h"
- #include <vector>
-
-// 引入各层模块
+#include <vector>
 #include "hal/DisplayHAL.h"
 #include "hal/InputHAL.h"
 #include "service/NetworkService.h"
@@ -12,10 +10,10 @@
 
 // 引入视图
 #include "view/PageWatchFace.h"
-#include "view/PageHorizontalMenu.h" // 负责菜单 (新增的横向视图)
+#include "view/PageHorizontalMenu.h" 
+#include "view/PageVerticalMenu.h"   // 【新增】 引入垂直列表视图
 #include "view/SystemToast.h"
-
-#include "controller/MenuController.h" // 负责菜单逻辑
+#include "controller/MenuController.h"
 
 class MenuFactory;
 
@@ -41,8 +39,9 @@ private:
     MenuController menuCtrl; // 菜单逻辑核心
 
     // --- 视图渲染器 ---
-    PageWatchFace watchFace;       // 表盘渲染器
-    PageHorizontalMenu menuView;   // 菜单渲染器 (新的横向)
+    PageWatchFace watchFace;       // 表盘
+    PageHorizontalMenu pageHorizontal; // 【重命名】 横向画师 (原 menuView)
+    PageVerticalMenu   pageVertical;   // 【新增】   纵向画师
 
     // --- 菜单数据 (Model) ---
     MenuPage* rootMenu = nullptr;
@@ -62,8 +61,8 @@ private:
     std::vector<MenuPage*> pageList; 
 
     // 辅助函数：创建一个新页面并自动注册到垃圾回收站
-    MenuPage* createPage(const char* title) {
-        MenuPage* p = new MenuPage(title);
+    MenuPage* createPage(const char* title, MenuLayout layout = LAYOUT_LIST) {
+        MenuPage* p = new MenuPage(title, layout);
         pageList.push_back(p);
         return p;
     }
