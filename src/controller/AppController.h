@@ -25,7 +25,6 @@ class AppController {
     friend class MenuFactory;
     friend class SettingsBuilder;
     friend class GamesBuilder;
-    // 【新增】允许 AppBase 访问 (例如游戏退出时调用 app->quitApp())
     friend class AppBase; 
 
 public:
@@ -49,10 +48,11 @@ private:
     SystemToast toast;
 
     // --- 内部私有函数 ---
+    void bindSystemEvents(); // 绑定系统默认按键  
     void destroyMenuTree();       
     void checkWeather();          
     void render();                
-    void checkDayChange();        
+    void checkDayChange();       
     
     // --- 视图渲染器 ---
     PageWatchFace watchFace;       

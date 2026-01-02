@@ -2,27 +2,21 @@
 #include "controller/AppController.h"
 #include "assets/Lang.h" // 引入字典
 
-MenuPage* GamesBuilder::build(AppController* app) {
-    int lang = AppData.languageIndex;
-    
-    // 1. 创建页面
-    MenuPage* page = app->createPage(STR_GAME[lang], LAYOUT_LIST);
+#include "apps/games/dino/GameDino.h"
 
-    // ==========================================
-    // 0. 顶部通用返回键 (无图标)
-    // ==========================================
-    page->add(STR_BACK[lang], nullptr, [app](){
-        app->menuCtrl.back(); 
-    });
+MenuPage* GamesBuilder::build(AppController* app) {
+    
+    int lang = AppData.languageIndex;
+    MenuPage* page = app->createPage(STR_GAME[lang], LAYOUT_LIST);
+    page->add(STR_BACK[lang], nullptr, [app](){ app->menuCtrl.back(); });
 
     // ==========================================
     // 1. 实际开发的游戏 (Priority)
     // ==========================================
     
     // Dino Run
-    page->add(STR_GAME_DINO[lang], [](){ 
-        Serial.println("Start Dino"); 
-        // app->startApp(new GameDino());
+    page->add(STR_GAME_DINO[lang], nullptr, [app](){ 
+        app->startApp(new GameDino(app)); 
     });
 
     // 2048

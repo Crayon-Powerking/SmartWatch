@@ -15,6 +15,7 @@ void StorageService::load() {
     AppData.lastWeatherTime = prefs.getLong("w_time", 0);
     AppData.lastStepDayCode = prefs.getInt("step_day", 0);
     AppData.languageIndex = prefs.getInt("lang", 0);
+    AppData.dinoHighScore = prefs.getLong("dino_hs", 0);
 }
 
 void StorageService::save() {
@@ -48,5 +49,10 @@ void StorageService::save() {
 
     if (prefs.getInt("lang", 0) != AppData.languageIndex) {
         prefs.putInt("lang", AppData.languageIndex); // 保存语言
+    }
+
+    long currentDinoHs = AppData.dinoHighScore;
+    if (prefs.getLong("dino_hs", 0) != currentDinoHs) {
+        prefs.putLong("dino_hs", currentDinoHs);
     }
 }

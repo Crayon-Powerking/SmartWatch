@@ -35,3 +35,8 @@ static const char* STR_GAME_MINECRAFT[] = {"Minecraft",        "我的世界(假
 static const char* STR_GAME_DOOM[]      = {"Doom",             "毁灭战士"};
 static const char* STR_GAME_CYBER[]     = {"Cyberpunk 2077",   "赛博朋克2077"};
 static const char* STR_GAME_GENSHIN[]   = {"Genshin Impact",   "原神(启动!)"};
+
+// --- 游戏专用文本 ---
+static const char* STR_DINO_GAMEOVER[] = {"GAME OVER", "游戏结束"};
+static const char* STR_DINO_CONTINUE[] = {"Continue",  "继续游戏"};
+static const char* STR_DINO_QUIT[]     = {"Quit",      "退出游戏"};

@@ -14,6 +14,8 @@ struct AppDataModel {
     
     bool isWifiConnected = false;// WiFi 连接状态
     int languageIndex = 0;
+
+    long dinoHighScore = 0;
 };
 
 // 声明一个全局变量，让所有文件都能找到它

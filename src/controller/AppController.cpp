@@ -11,20 +11,11 @@ extern InputHAL btnDown;
 
 AppController::AppController() {}
 
-void AppController::begin() {
-    // 1. 启动硬件和服务
-    storage.begin();
-    storage.load();
-    network.begin(WIFI_SSID, WIFI_PASS);
-
-    // 2. 核心：构建菜单树
-    MenuFactory::build(this);
-    
+// 【关键修改 1】将按键绑定逻辑提取为独立函数
+void AppController::bindSystemEvents() {
     // [SELECT 单击]
     btnSelect.attachClick([this](){
-        // 如果正在玩游戏，拦截系统按键
         if (currentApp) return; 
-
         if (!inMenuMode) {
             inMenuMode = true;
             if (rootMenu && !rootMenu->items.empty()) {
@@ -38,8 +29,7 @@ void AppController::begin() {
 
     // [SELECT 长按]
     btnSelect.attachLongPress([this](){
-        if (currentApp) return; // 拦截
-
+        if (currentApp) return; 
         if (inMenuMode) {
             if (!menuCtrl.back()) inMenuMode = false;
         } else {
@@ -50,8 +40,7 @@ void AppController::begin() {
 
     // [UP 连发]
     btnUp.attachDuringLongPress([this](){
-        if (currentApp) return; // 拦截
-
+        if (currentApp) return; 
         if (inMenuMode) {
             static unsigned long lastTrig = 0;
             if (millis() - lastTrig > 150) {
@@ -63,18 +52,14 @@ void AppController::begin() {
 
     // [UP 单击]
     btnUp.attachClick([this](){
-        if (currentApp) return; // 拦截
-
+        if (currentApp) return; 
         if (inMenuMode) menuCtrl.prev();
-        else {
-            watchFace.onButton(EVENT_KEY_UP);
-        }
+        else watchFace.onButton(EVENT_KEY_UP);
     });
 
     // [DOWN 连发]
     btnDown.attachDuringLongPress([this](){
-        if (currentApp) return; // 拦截
-
+        if (currentApp) return; 
         if (inMenuMode) {
             static unsigned long lastTrig = 0;
             if (millis() - lastTrig > 150) {
@@ -86,13 +71,23 @@ void AppController::begin() {
 
     // [DOWN 单击]
     btnDown.attachClick([this](){
-        if (currentApp) return; // 拦截
-
+        if (currentApp) return; 
         if (inMenuMode) menuCtrl.next();
-        else {
-            watchFace.onButton(EVENT_KEY_DOWN);
-        }
+        else watchFace.onButton(EVENT_KEY_DOWN);
     });
+}
+
+void AppController::begin() {
+    // 1. 启动硬件和服务
+    storage.begin();
+    storage.load();
+    network.begin(WIFI_SSID, WIFI_PASS);
+
+    // 2. 核心：构建菜单树
+    MenuFactory::build(this);
+    
+    // 3. 【关键修改 2】调用事件绑定
+    bindSystemEvents();
 
     // 4. 初始化计时器
     timerWeather = 0;
@@ -125,18 +120,18 @@ void AppController::startApp(AppBase* app) {
 void AppController::quitApp() {
     if (!currentApp) return;
 
-    // 1. 调用 App 清理接口
+    // 1. 清理
     currentApp->onExit();
-    
-    // 2. 释放内存
     delete currentApp;
     currentApp = nullptr;
 
-    // 3. 恢复到菜单模式
+    // 2. 【关键修改 3】恢复系统的按键接管
+    bindSystemEvents();
+
+    // 3. 恢复界面
     inMenuMode = true; 
     menuCtrl.init(rootMenu);
     
-    // 强制刷新一次显存，防止残影
     display.clear();
     display.update();
 }
