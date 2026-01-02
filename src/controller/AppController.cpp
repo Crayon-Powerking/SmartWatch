@@ -102,7 +102,7 @@ void AppController::tick() {
     delay(1); 
 
     network.tick();
-    
+    AppData.isWifiConnected = network.isConnected();
     static unsigned long wifiConnectTime = 0;
     static bool lastWifiState = false;
     if (AppData.isWifiConnected && !lastWifiState) {
