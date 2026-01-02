@@ -16,9 +16,15 @@
 #include "controller/MenuController.h"
 
 class MenuFactory;
+class SettingsBuilder;
+class GamesBuilder;
 
 class AppController {
+    
     friend class MenuFactory;
+    friend class SettingsBuilder;
+    friend class GamesBuilder;
+
 public:
     AppController(); 
     void begin();
