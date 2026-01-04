@@ -4,6 +4,7 @@
 
 #include "apps/games/GamesBuilder.h"
 #include "apps/settings/SettingsBuilder.h" 
+#include "apps/information/AboutApp.h"
 
 void MenuFactory::build(AppController* app) {
     app->destroyMenuTree();
@@ -42,7 +43,9 @@ void MenuFactory::build(AppController* app) {
     app->rootMenu->add(STR_CALENDAR[lang], icon_calendar, [](){});
     app->rootMenu->add(STR_ALARM[lang],    icon_alarm,    [](){});
     app->rootMenu->add(STR_TOOLS[lang],    icon_tool,     [](){});
-    app->rootMenu->add(STR_ABOUT[lang],    icon_information, [](){});
+    app->rootMenu->add(STR_ABOUT[lang], icon_information, [app](){
+        app->startApp(new AboutApp(app));
+    });
     
     // 默认选中中间
     if (!app->rootMenu->items.empty()) {
