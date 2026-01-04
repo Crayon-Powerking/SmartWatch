@@ -106,7 +106,7 @@ private:
 
         // 2. 晚晴 (Sunny Evening) - Code 1
         // 注意：这里用了你 AppIcons.h 里特有的拼写 "evenning"
-        if (code == 1) return icon_weather_sunny_evenning;
+        if (code == 1) return icon_weather_sunny_evening;
 
         // 3. 多云 (Cloudy) - Code 4~9
         // Code 2,3 (晴间多云) 也可以归为此类

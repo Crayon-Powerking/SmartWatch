@@ -37,7 +37,9 @@ private:
     unsigned long score;
     unsigned long highScore; // 最高分
     float speed;
+    float maxSpeed;
     unsigned long frameCount;
+    
     
     Obstacle obstacles[OBSTACLE_MAX];
 

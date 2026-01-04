@@ -16,6 +16,8 @@ public:
     void begin();
     void tick();
 
+    bool isPressed();
+
     // 注册接口：业务层把函数传进来
     void attachClick(EventCallback cb);
     void attachLongPress(EventCallback cb);
@@ -23,7 +25,7 @@ public:
 
 private:
     OneButton btn;
-
+    uint8_t _pin;
     // --- 内部存储的回调 ---
     EventCallback _onClickCb = nullptr;
     EventCallback _onLongPressCb = nullptr;

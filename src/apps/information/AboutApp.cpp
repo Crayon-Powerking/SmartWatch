@@ -66,7 +66,7 @@ void AboutApp::initInfo() {
     // --- 传感器 (静态显示，还原为原先的样子) ---
     // 这里不再去扫描 I2C，直接写死或者留空
     lines.push_back("== SENSORS ==");
-    lines.push_back("IMU: MPU-6050");  // 假设您装了这个
+    // lines.push_back("IMU: MPU-6050");  // 假设您装了这个
     lines.push_back("Disp: SSD1306");
 
     lines.push_back("");

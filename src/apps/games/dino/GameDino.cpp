@@ -39,7 +39,8 @@ void GameDino::resetGame() {
     score = 0;
     
     // 速度微调
-    speed = 0.4; 
+    speed = 0.6; 
+    maxSpeed = 2.0;
     
     frameCount = 0;
     pauseMenuIndex = 0; 
@@ -63,8 +64,8 @@ int GameDino::onLoop() {
         if (score > highScore) highScore = score;
 
         // 渐进加速
-        if (score % 300 == 0 && speed < 5.5) {
-            speed += 0.1;
+        if (score % 400 == 0 && score < 1200 && speed < maxSpeed) {
+            speed += 0.08f;
         }
     } 
     else if (state == STATE_PAUSED) {
@@ -95,7 +96,7 @@ void GameDino::onKeyUp() {
     if (state == STATE_PLAYING) {
         if (!isJumping) {
             // 起跳力度 -6.2
-            dinoVy = -6.2; 
+            dinoVy = -8.0f; 
             isJumping = true;
         }
     } 
@@ -132,7 +133,7 @@ void GameDino::onKeySelect() {
 
 void GameDino::updatePhysics() {
     dinoY += (int)dinoVy;
-    dinoVy += 0.16; 
+    dinoVy += 0.16f; 
 
     if (dinoY >= DINO_GROUND_Y - DINO_H) {
         dinoY = DINO_GROUND_Y - DINO_H;
@@ -180,7 +181,7 @@ void GameDino::updateObstacles() {
             if (rand() % 100 < 2) { 
                 bool canSpawn = true;
                 for(int j=0; j<OBSTACLE_MAX; j++) {
-                    if (obstacles[j].active && obstacles[j].x > 80) canSpawn = false;
+                    if (obstacles[j].active && obstacles[j].x > 70) canSpawn = false;
                 }
                 
                 if (canSpawn) {

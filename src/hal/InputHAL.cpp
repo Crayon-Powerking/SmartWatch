@@ -1,6 +1,6 @@
 #include "InputHAL.h"
 
-InputHAL::InputHAL(uint8_t pin) : btn(pin, true, true) {
+InputHAL::InputHAL(uint8_t pin) : btn(pin, true, true), _pin(pin) {
 }
 
 void InputHAL::begin() {
@@ -17,6 +17,12 @@ void InputHAL::begin() {
 
 void InputHAL::tick() {
     btn.tick();
+}
+
+bool InputHAL::isPressed() {
+    // 因为你在构造函数里设置了 activeLow = true (btn(pin, true, true))
+    // 所以 digitalRead 读到 LOW (0) 代表按键被按下
+    return digitalRead(_pin) == LOW;
 }
 
 void InputHAL::attachClick(EventCallback cb) {

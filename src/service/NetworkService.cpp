@@ -68,3 +68,53 @@ WeatherResult NetworkService::fetchWeather(const char* key, const char* city) {
 
     return result;
 }
+
+WeatherForecast NetworkService::fetchForecast(const char* key, const char* city) {
+    WeatherForecast result;
+    result.success = false;
+
+    if (!isConnected()) return result;
+
+    WiFiClientSecure client;
+    client.setInsecure(); // 跳过 SSL 验证
+
+    HTTPClient http;
+    // 构建 3天预报 API URL (daily.json)
+    // start=0 表示从今天开始, days=3 表示拿3天
+    String url = "https://api.seniverse.com/v3/weather/daily.json?key=" + String(key) + 
+                 "&location=" + String(city) + "&language=en&unit=c&start=0&days=3";
+    
+    if (http.begin(client, url)) { 
+        int httpCode = http.GET();
+        if (httpCode == HTTP_CODE_OK) {
+            String payload = http.getString();
+            
+            // 稍微加大一点 JSON 缓存，因为 daily 数据比 now 长
+            JsonDocument doc; 
+            DeserializationError error = deserializeJson(doc, payload);
+
+            if (!error) {
+                // 1. 获取城市名 (用于确认)
+                result.cityName = doc["results"][0]["location"]["name"].as<String>();
+                
+                // 2. 遍历 daily 数组 (通常只有3个)
+                JsonArray daily = doc["results"][0]["daily"];
+                for (int i = 0; i < 3 && i < daily.size(); i++) {
+                    result.days[i].code = daily[i]["code_day"].as<int>(); // 白天天气代码
+                    result.days[i].high = daily[i]["high"].as<int>();     // 最高温
+                    result.days[i].low  = daily[i]["low"].as<int>();      // 最低温
+                }
+                
+                result.success = true;
+                Serial.printf("[Weather] Forecast Success: %s\n", result.cityName.c_str());
+            } else {
+                Serial.print("[Weather] Forecast JSON Error: ");
+                Serial.println(error.c_str());
+            }
+        } else {
+            Serial.printf("[Weather] Forecast GET failed: %s\n", http.errorToString(httpCode).c_str());
+        }
+        http.end();
+    }
+    return result;
+}

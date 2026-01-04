@@ -22,7 +22,7 @@
 #define WIFI_PASS     "ai123456"
 
 #define WEATHER_KEY   "SvagmpHNnsfuweKoz"
-#define WEATHER_CITY  "Suzhou"
+#define WEATHER_CITY  "Hefei"
 
 // 1. 自动保存间隔 (毫秒)
 // 比如：5分钟 = 5 * 60 * 1000 = 300000

@@ -1,6 +1,7 @@
 #pragma once
 #include <U8g2lib.h>
 #include "AppConfig.h"
+#include <cmath>
 
 class DisplayHAL {
 public:
@@ -29,6 +30,10 @@ public:
     void drawRBox(int x, int y, int width, int height, int radius);
     void drawLine(int x1, int y1, int x2, int y2);
     void setDrawColor(uint8_t color);
+
+    void drawCircle(int x0, int y0, int rad); // 画空心圆
+    void drawDisc(int x0, int y0, int rad);   // 画实心圆
+    void drawProgressArc(int x, int y, int radius, float progress);
     
 
 private:

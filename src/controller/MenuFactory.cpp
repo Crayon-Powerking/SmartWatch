@@ -5,6 +5,7 @@
 #include "apps/games/GamesBuilder.h"
 #include "apps/settings/SettingsBuilder.h" 
 #include "apps/information/AboutApp.h"
+#include "apps/weather/WeatherApp.h"
 
 void MenuFactory::build(AppController* app) {
     app->destroyMenuTree();
@@ -31,7 +32,7 @@ void MenuFactory::build(AppController* app) {
 
     // --- 挂载 天气 ---
     app->rootMenu->add(STR_WEATHER[lang], icon_weather, [app](){ 
-        app->checkWeather(); 
+        app->startApp(new WeatherApp(app));
     });
 
     // --- 挂载 游戏 ---
