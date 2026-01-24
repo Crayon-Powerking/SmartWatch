@@ -3,16 +3,16 @@
 #include <vector>
 #include <functional>
 
-// 1. 定义布局枚举 (新增)
+// 菜单布局类型
 enum MenuLayout {
     LAYOUT_ICON, // 横向图标 (一级菜单)
     LAYOUT_LIST  // 纵向列表 (二级菜单)
 };
 
-// 1. 通用回调动作
+// 菜单项的回调函数类型
 using MenuCallback = std::function<void()>;
 
-// 2. 单个菜单项
+// 单个菜单项
 struct MenuItem {
     String title;        // 名字 (如 "Settings")
     const uint8_t* icon; // 图标 (位图数据)
@@ -23,21 +23,18 @@ struct MenuItem {
         : title(t), icon(i), action(cb) {}
 };
 
-// 3. 菜单页 (包含一组项目)
+// 菜单页面 (包含多个菜单项)
 struct MenuPage {
     String title;                // 页标题 (如 "Main")
     std::vector<MenuItem> items; // 这一页的所有图标
     int selectedIndex = 0;       // 记住这一页选到了第几个
-    
-    // 2. 新增成员变量：该页面的布局类型
-    MenuLayout layout; 
+    MenuLayout layout;           // 布局类型
 
     // 构造函数增加默认值 (默认为列表，因为列表更常用)
     MenuPage(String t, MenuLayout l = LAYOUT_LIST) 
         : title(t), layout(l) {}
-
-    MenuPage(String t) : title(t) {}
     
+    // 添加菜单项的函数
     void add(String title, const uint8_t* icon, MenuCallback cb) {
         items.push_back(MenuItem(title, icon, cb));
     }

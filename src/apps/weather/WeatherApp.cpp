@@ -2,7 +2,7 @@
 #include "assets/AppIcons.h"
 #include "assets/Lang.h"
 #include "controller/AppController.h"
-#include <cstdio> // 用于 snprintf
+#include <cstdio>
 
 // 引用外部硬件对象
 extern DisplayHAL display;
@@ -10,34 +10,35 @@ extern InputHAL btnUp;
 extern InputHAL btnDown;
 extern InputHAL btnSelect;
 
-// --- 1. 预设城市库 ---
+// 预设城市列表
 const std::vector<PresetCity> WeatherApp::PRESETS = {
-    {"Beijing",   "beijing"},
-    {"Shanghai",  "shanghai"},
-    {"Guangzhou", "guangzhou"},
-    {"Shenzhen",  "shenzhen"},
-    {"Chengdu",   "chengdu"},
-    {"Hangzhou",  "hangzhou"},
-    {"Wuhan",     "wuhan"},
-    {"Xi'an",     "xian"},
-    {"Nanjing",   "nanjing"},
-    {"Suzhou",    "suzhou"}
+    {STR_Beijing,   "beijing"},
+    {STR_Shanghai,  "shanghai"},
+    {STR_Guangzhou, "guangzhou"},
+    {STR_Shenzhen,  "shenzhen"},
+    {STR_Chengdu,   "chengdu"},
+    {STR_Hangzhou,  "hangzhou"},
+    {STR_Wuhan,     "wuhan"},
+    {STR_Xian,      "xian"},
+    {STR_Nanjing,   "nanjing"},
+    {STR_Suzhou,    "suzhou"},
+    {STR_Hefei,     "hefei"}
 };
 
-// --- 2. 生命周期管理 ---
+// App 生命周期接口实现
 void WeatherApp::onRun(AppController* sys) {
-    this->sys = sys;
-    ignoreClickUntil = 0; // 初始化
-    lastFrameTime = millis();
     // 初始化状态
+    this->sys = sys;
+    ignoreClickUntil = 0;
+    lastFrameTime = millis();
     viewState = VIEW_MAIN;
     slideX = 0; 
     targetSlideX = 0;
     scrollY = 0;
     targetY = 0;
     selectedIndex = 0;
-    selectionSmooth = 0.0f; // 初始化为0
-    pendingWeatherUpdate = false; // [新增] 初始化
+    selectionSmooth = 0.0f; 
+    pendingWeatherUpdate = false; 
 
     loadSlots();
     
@@ -72,8 +73,16 @@ void WeatherApp::onRun(AppController* sys) {
     });
 
     btnSelect.attachLongPress([this, sys](){
+        if (!forecast.success && !isLoading && sys->network.isConnected()) {
+            static unsigned long lastRetryTick = 0;
+            if (millis() - lastRetryTick > 2000) {
+                lastRetryTick = millis();
+                refreshWeather(); // 只有在失败且有网时，才会自动重试
+                return;
+            }
+        }
         if (viewState == VIEW_SLOTS) {
-            // 【关键修改】这里留空！
+            // 这里留空！
             // 我们在 onLoop 里手动接管了长按进度条和删除逻辑。
             // 如果这里再写代码，就会出现“锁住了但还能删”的 Bug。
         } 
@@ -94,24 +103,24 @@ void WeatherApp::onExit() {
 }
 
 int WeatherApp::onLoop() {
-    unsigned long now = millis();
+    unsigned long now = millis();                                
     // 计算两帧之间的时间差 (秒)
     float dt = (now - lastFrameTime) / 1000.0f;
     lastFrameTime = now;
 
-    // ... 1. 光标动画 (保持不变) ...
+    // ----- 光标动画 -----
     float diffIdx = (float)selectedIndex - selectionSmooth;
     if (abs(diffIdx) > 0.01f) selectionSmooth += diffIdx * 0.25f;
     else selectionSmooth = (float)selectedIndex;
 
-    // ... 2. 视口滚动 (保持不变) ...
+    // ----- 视口滚动 -----
     float cursorPixelY = selectionSmooth * 16.0f;
     float targetCamY = cursorPixelY - 24.0f;
     if (targetCamY < 0) targetCamY = 0;
     float diffScroll = targetCamY - scrollY;
     scrollY += diffScroll * 0.2f;
 
-    // --- 3. 长按删除检测逻辑 (重写) ---
+    // --- 长按删除检测逻辑 ---
     // 只有在 SLOTS 视图，且选中了有效城市
     if (viewState == VIEW_SLOTS && selectedIndex >= 0 && !slots[selectedIndex].isEmpty) {
         
@@ -119,19 +128,16 @@ int WeatherApp::onLoop() {
         if (getCityCount() > 1) {
             
             if (btnSelect.isPressed()) {
-                // [修改] 基于时间的进度增加
                 // 目标：1.5秒充满。 即 1.0 / 1.5 = 0.66 per second
                 deleteProgress += 0.7f * dt; 
-                
                 // 封顶
                 if (deleteProgress > 1.0f) deleteProgress = 1.0f;
-
                 // 满了就删除
                 if (deleteProgress >= 1.0f) {
                     deleteCurrentSlot();
                     deleteProgress = 0.0f; 
                     
-                    // [关键] 删除后，设置 500ms 的点击冷却时间
+                    // 删除后，设置 500ms 的点击冷却时间
                     // 这样用户松手时产生的 click 信号会被 handleInput 忽略
                     ignoreClickUntil = millis() + 500;
                 }
@@ -148,7 +154,7 @@ int WeatherApp::onLoop() {
         deleteProgress = 0.0f;
     }
 
-    // ... 4. 延迟网络 & 5. 滑动逻辑 (保持不变) ...
+    // --- 视图切换动画 ---
     if (pendingWeatherUpdate && abs(slideX - targetSlideX) < 2.0f) {
         pendingWeatherUpdate = false;
         refreshWeather();
@@ -160,10 +166,9 @@ int WeatherApp::onLoop() {
     return 0; 
 }
 
-// --- 3. 核心业务逻辑 ---
-
 void WeatherApp::handleInput() {
     if (millis() < ignoreClickUntil) return;
+    int L = AppData.languageIndex;
     switch (viewState) {
         case VIEW_MAIN:
             if (selectedIndex == 0) {
@@ -178,7 +183,7 @@ void WeatherApp::handleInput() {
             break;
 
         case VIEW_SLOTS:
-            // [新增] 如果选中的是顶部的返回键 (-1)
+            // 如果选中的是顶部的返回键 (-1)
             if (selectedIndex == -1) {
                 viewState = VIEW_MAIN;
                 targetSlideX = 0;
@@ -186,16 +191,15 @@ void WeatherApp::handleInput() {
                 return;
             }
 
-            // 下面是原有的槽位逻辑
+            // 选中某个槽位
             if (slots[selectedIndex].isEmpty) {
-                // [修改] 点击空槽位：记录我们要编辑这个槽，但不要改变当前正在运行的天气城市
+                // 点击空槽位：记录我们要编辑这个槽，但不要改变当前正在运行的天气城市
                 editingSlotIndex = selectedIndex; 
-                
                 viewState = VIEW_LIBRARY;
                 targetSlideX = -256; 
                 selectedIndex = 0; 
             } else {
-                // [保持] 点击已有城市：这才是真正切换“当前天气城市”的时候
+                // 点击已有城市：这才是真正切换“当前天气城市”的时候
                 activeSlotIndex = selectedIndex;
                 viewState = VIEW_MAIN;
                 targetSlideX = 0;
@@ -205,20 +209,19 @@ void WeatherApp::handleInput() {
             break;
 
         case VIEW_LIBRARY:
-            // 1. 处理库列表的返回键
+            // 处理库列表的返回键
             if (selectedIndex == -1) {
                 viewState = VIEW_SLOTS;
                 targetSlideX = -128;
-                // [修改] 返回时，光标回到刚才想编辑的那个位置，而不是 active 位置
+                // 返回时，光标回到刚才想编辑的那个位置，而不是 active 位置
                 selectedIndex = editingSlotIndex; 
                 return;
             }
 
-            // 2. 选中城市，填入 editingSlotIndex 指向的槽位
-            // [修改] 使用 editingSlotIndex
+            // 选中城市，填入 editingSlotIndex 指向的槽位
             if (editingSlotIndex >= 0 && editingSlotIndex < 5) {
                 CitySlot& slot = slots[editingSlotIndex];
-                strcpy(slot.name, PRESETS[selectedIndex].name);
+                strcpy(slot.name, PRESETS[selectedIndex].names[L]);
                 strcpy(slot.code, PRESETS[selectedIndex].code);
                 slot.isEmpty = false;
                 
@@ -245,10 +248,10 @@ void WeatherApp::refreshWeather() {
 }
 
 void WeatherApp::loadSlots() {
+    int L = AppData.languageIndex;
     for (int i=0; i<5; i++) slots[i].isEmpty = true;
-    // 默认第一个槽位有数据
-    strcpy(slots[0].name, "Hefei");
-    strcpy(slots[0].code, "Hefei");
+    strcpy(slots[0].name, PRESETS[WEATHER_CITY_index].names[L]);
+    strcpy(slots[0].code, PRESETS[WEATHER_CITY_index].code);
     slots[0].isEmpty = false;
 }
 
@@ -257,32 +260,32 @@ void WeatherApp::saveSlots() {
 }
 
 const uint8_t* WeatherApp::getWeatherIcon(int code) {
-    // 1. 夜间晴/夜间多云 -> 使用月亮图标
+    // 夜间晴/夜间多云
     if (code == 1 || code == 3) {
         return icon_weather_sunny_evening; 
     }
 
-    // 2. 白天晴
+    // 白天晴
     if (code == 0 || code == 2) {
         return icon_weather_sunny;
     }
     
-    // 3. 多云 / 阴天
+    // 多云 / 阴天
     if (code >= 4 && code <= 9) {
         return icon_weather_cloudy;
     }
     
-    // 4. 雨 (统统用雨伞/水滴)
+    // 雨
     if (code >= 10 && code <= 19) {
         return icon_weather_rain;
     }
     
-    // 5. 雪
+    // 雪
     if (code >= 20 && code <= 25) {
         return icon_weather_snow;
     }
     
-    // 6. 雾/霾/沙尘
+    // 雾/霾/沙尘
     if (code >= 26 && code <= 38) {
         return icon_weather_fog;
     }
@@ -359,8 +362,7 @@ const char* WeatherApp::getWeatherText(int code) {
     }
 }
 
-// --- 4. 渲染逻辑 (双语适配版) ---
-
+// --- 渲染逻辑 ---
 void WeatherApp::render() {
     display.clear();
     
@@ -386,8 +388,7 @@ void WeatherApp::renderMainView() {
     display.setFontMode(1); 
 
     // --- Header (0px - 14px) ---
-    
-    // 1. 绘制 Back 按钮 (修复乱码问题)
+    // 绘制 Back 按钮
     if (selectedIndex == 0 && viewState == VIEW_MAIN) {
         // 选中状态：白底黑字
         display.setDrawColor(1);
@@ -399,7 +400,7 @@ void WeatherApp::renderMainView() {
     }
     display.drawText(x + 2, 11, STR_BACK[L]); 
 
-    // 2. 绘制城市名
+    // 绘制城市名
     display.setDrawColor(1); // 恢复白笔
     if (selectedIndex == 1 && viewState == VIEW_MAIN) {
         display.drawFrame(x + 45, 0, 83, 14); // 选中时画个空心框
@@ -429,37 +430,26 @@ void WeatherApp::renderMainView() {
         int rowBaseY = startY + (i * rowH);
         int textY = rowBaseY + 11;
         
-        // --- 1. 数据准备 ---
+        // --- 数据准备 ---
         const char* labelStr;
         if (i == 0) labelStr = STR_TODAY[L];
         else if (i == 1) labelStr = STR_TOMORROW[L];
         else labelStr = STR_DAY_AFTER[L];
-
-        // 【优化1】去掉 "C"，只保留纯数字区间，节省宝贵的 15px
         char tempStr[16];
         snprintf(tempStr, sizeof(tempStr), "%d~%d", forecast.days[i].low, forecast.days[i].high);
 
         const char* weatherStr = getWeatherText(forecast.days[i].code);
         const uint8_t* iconPtr = getWeatherIcon(forecast.days[i].code);
 
-        // --- 2. 绘制 (坐标微调) ---
-        
+        // --- 绘制 ---   
         // Col 1: 时间 (Max 24px)
         // 起点 x+2
         display.drawText(x + 2, textY, labelStr);
-
         // Col 2: 温度 (Max 36px)
-        // 起点 x+28 -> 改为 x+26，紧凑一点，防止挤到后面的天气
         display.drawText(x + 26, textY, tempStr);
-
         // Col 3: 天气 (Max 48px)
-        // 起点 x+66 -> 改为 x+62。
-        // 因为去掉了C，温度结束大约在 x+58，从 x+62 开始画天气，有4px间距，非常完美。
-        // 这样即使是 "Thunder" 这种长词也能显示大部分
         display.drawText(x + 62, textY, weatherStr);
-
         // Col 4: 图标 (Fixed 16px)
-        // 起点 x+112 (绝对位置，不动)
         display.setDrawColor(1);
         display.drawIcon(x + 112, rowBaseY - 1, 16, 16, iconPtr);
     }
@@ -471,14 +461,14 @@ void WeatherApp::renderSlotsView() {
     char buf[64];
     
     // 布局参数
-    int listY = 28; 
-    int cursorH = 13;   
-    int cursorOff = 10; 
-    int splitX = 88;      // 分割线 X
-    int listWidth = 86;   // 列表宽
-    int rightCenter = 108; // 右侧中心 X
+    int listY = 28;         // 列表起始 Y
+    int cursorH = 13;       // 光标高度
+    int cursorOff = 10;     // 光标偏移
+    int splitX = 88;        // 分割线 X
+    int listWidth = 86;     // 列表宽
+    int rightCenter = 108;  // 右侧中心 X
 
-    // --- 1. 左侧列表光标 & 文字 (保持不变) ---
+    //  --- 左侧列表绘制 ---
     if (selectedIndex >= 0) {
         int cursorDrawY = listY + (int)(selectionSmooth * 16) - (int)scrollY - cursorOff;
         if (cursorDrawY > 14 && cursorDrawY < 64) {
@@ -503,7 +493,7 @@ void WeatherApp::renderSlotsView() {
         }
     }
 
-    // --- 2. 右侧区域绘制 (核心修改) ---
+    // --- 右侧区域绘制 ---
     display.setDrawColor(1);
     display.drawLine(baseX + splitX, 15, baseX + splitX, 64); // 分割线
 
@@ -524,7 +514,7 @@ void WeatherApp::renderSlotsView() {
             int count = getCityCount();
             
             if (count <= 1) {
-                // --- 子情况 B1: 只有这一个独苗 -> 显示锁 (禁止删除) ---
+                // 只有这一个独苗 -> 显示锁 (禁止删除) ---
                 // 画一个简单的锁头
                 display.drawFrame(baseX + rightCenter - 4, midY - 2, 8, 6); // 锁身
                 display.drawBox(baseX + rightCenter - 4, midY - 2, 8, 6);   // 实心锁身
@@ -535,10 +525,7 @@ void WeatherApp::renderSlotsView() {
                 display.drawText(baseX + splitX + 6, 56, "LOCK");
             } 
             else {
-                // 可以删除 -> 显示进度条
-                
-                // [修改] 布局策略：文字在上方，进度条在下方
-                
+                // 可以删除 -> 显示进度条和提示
                 // 1. 文字提示 (HOLD / DEL)
                 // Y=38 左右显示文字
                 if (deleteProgress > 0) {
@@ -564,9 +551,6 @@ void WeatherApp::renderSlotsView() {
             }
         }
     }
-    else if (selectedIndex == -1) {
-        display.drawText(baseX + splitX + 6, 40, "EXIT");
-    }
     // 情况 C: 返回键
     else if (selectedIndex == -1) {
         display.drawText(baseX + splitX + 6, 40, "EXIT");
@@ -584,7 +568,7 @@ void WeatherApp::renderSlotsView() {
     } else {
         display.setDrawColor(1);
     }
-    display.drawText(backBtnX, 12, "Back");
+    display.drawText(backBtnX, 12, "< Back");
     display.setDrawColor(1); 
     display.drawLine(baseX, 14, baseX+128, 14);
 }
@@ -597,44 +581,40 @@ void WeatherApp::renderLibraryView() {
     int cursorBoxH = 13; 
     int cursorOff = 10;  
 
-    // 1. 绘制列表光标 (selectedIndex >= 0)
+    // 绘制列表光标 (selectedIndex >= 0)
     if (selectedIndex >= 0) {
         // 计算平滑光标位置
         int cursorDrawY = listY + (int)(selectionSmooth * 16) - (int)scrollY - cursorOff;
+        // 仅当光标在可见区域时才绘制
         if (cursorDrawY > 14 && cursorDrawY < 64) {
-            // [注意] Library列表你之前可能直接用的循环里的 drawBox
-            // 建议改为和 Slots 一样的分离式写法，或者保持原样但加上 if (selectedIndex >=0)
-            // 这里为了简单，假设你还没改分离式，我们用之前的逻辑，但加判断：
+            display.setDrawColor(1);
+            display.drawBox(baseX, cursorDrawY, 100, cursorBoxH);
         }
     }
-
-    // [注意] 既然你已经掌握了分离式光标（在Slots里），建议Library也改成那样。
-    // 如果还没改，保持原循环内逻辑即可，但要确保 selectedIndex == -1 时不画框。
-    
+    // 绘制列表项
     for (int i = 0; i < (int)PRESETS.size(); i++) {
         int drawY = listY + (i * itemH) - (int)scrollY;
         if (drawY > 64) continue; 
         if (drawY < 14) continue; 
 
-        // [修改] 只有当 selectedIndex 匹配且不为 -1 时才反色
+        // 绘制文字
         if (i == selectedIndex && selectedIndex >= 0 && viewState == VIEW_LIBRARY) {
-            display.drawBox(baseX, drawY - cursorOff, 100, cursorBoxH);
             display.setDrawColor(0);
         } else {
             display.setDrawColor(1);
         }
-        display.drawText(baseX + 4, drawY, PRESETS[i].name);
+        display.drawText(baseX + 4, drawY, PRESETS[i].names[L]);
     }
 
-    // --- 标题与返回键 ---
+    // 标题栏背景
     display.setDrawColor(0); 
     display.drawBox(baseX, 0, 128, 15);
-    
     display.setDrawColor(1);
     display.drawText(baseX + 2, 12, STR_ADD_CITY[L]); 
     
-    // [新增] 右上角返回键
+    // 右上角返回键
     int backBtnX = baseX + 90;
+
     if (selectedIndex == -1) {
         display.drawBox(backBtnX - 2, 0, 40, 14);
         display.setDrawColor(0);
@@ -648,15 +628,14 @@ void WeatherApp::renderLibraryView() {
 }
 
 void WeatherApp::deleteCurrentSlot() {
-    // 1. 清除数据 (原逻辑)
+    // 清除数据
     memset(&slots[selectedIndex], 0, sizeof(CitySlot));
     slots[selectedIndex].isEmpty = true;
     
-    // 2. [新增] 智能交接逻辑
+    // 智能交接逻辑
     // 如果删除的正是当前主页显示的城市 (activeSlotIndex)
     if (selectedIndex == activeSlotIndex) {
         int newActive = -1;
-        
         // 遍历所有槽位，寻找第一个有数据的槽位做替补
         for (int i = 0; i < 5; i++) {
             if (!slots[i].isEmpty) {
@@ -664,17 +643,14 @@ void WeatherApp::deleteCurrentSlot() {
                 break; // 找到一个就停
             }
         }
-        
-        // 更新活跃索引 (如果全是空的，newActive 就是 -1)
+        // 更新活跃索引
         activeSlotIndex = newActive;
-        
         // 如果找到了新城市，标记需要刷新天气
         if (newActive != -1) {
             pendingWeatherUpdate = true; 
         }
     }
-    
-    // 3. 保存
+    // 保存
     saveSlots();
 }
 

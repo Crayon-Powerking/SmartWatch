@@ -3,7 +3,6 @@
 #include "assets/AppIcons.h"
 #include "assets/Lang.h"
 
-// 引用外部对象
 extern DisplayHAL display;
 extern InputHAL btnSelect;
 extern InputHAL btnUp;
@@ -11,7 +10,7 @@ extern InputHAL btnDown;
 
 AppController::AppController() {}
 
-// 【关键修改 1】将按键绑定逻辑提取为独立函数
+// 绑定系统按键事件到菜单控制器
 void AppController::bindSystemEvents() {
     // [SELECT 单击]
     btnSelect.attachClick([this](){
@@ -38,6 +37,13 @@ void AppController::bindSystemEvents() {
         }
     });
 
+    // [UP 单击]
+    btnUp.attachClick([this](){
+        if (currentApp) return; 
+        if (inMenuMode) menuCtrl.prev();
+        else watchFace.onButton(EVENT_KEY_UP);
+    });
+
     // [UP 连发]
     btnUp.attachDuringLongPress([this](){
         if (currentApp) return; 
@@ -50,11 +56,11 @@ void AppController::bindSystemEvents() {
         }
     });
 
-    // [UP 单击]
-    btnUp.attachClick([this](){
+    // [DOWN 单击]
+    btnDown.attachClick([this](){
         if (currentApp) return; 
-        if (inMenuMode) menuCtrl.prev();
-        else watchFace.onButton(EVENT_KEY_UP);
+        if (inMenuMode) menuCtrl.next();
+        else watchFace.onButton(EVENT_KEY_DOWN);
     });
 
     // [DOWN 连发]
@@ -67,14 +73,7 @@ void AppController::bindSystemEvents() {
                 lastTrig = millis();
             }
         }
-    });
-
-    // [DOWN 单击]
-    btnDown.attachClick([this](){
-        if (currentApp) return; 
-        if (inMenuMode) menuCtrl.next();
-        else watchFace.onButton(EVENT_KEY_DOWN);
-    });
+    });  
 }
 
 void AppController::begin() {
@@ -83,10 +82,10 @@ void AppController::begin() {
     storage.load();
     network.begin(WIFI_SSID, WIFI_PASS);
 
-    // 2. 核心：构建菜单树
+    // 2. 构建菜单树
     MenuFactory::build(this);
     
-    // 3. 【关键修改 2】调用事件绑定
+    // 3. 调用事件绑定
     bindSystemEvents();
 
     // 4. 初始化计时器
@@ -125,7 +124,7 @@ void AppController::quitApp() {
     delete currentApp;
     currentApp = nullptr;
 
-    // 2. 【关键修改 3】恢复系统的按键接管
+    // 2. 恢复系统的按键接管
     bindSystemEvents();
 
     // 3. 恢复界面
@@ -215,7 +214,7 @@ void AppController::tick() {
     }
 }
 
-// 【关键修复】: 之前缺失的 checkWeather 实现
+// 检查并更新天气数据（在后台任务中执行）
 void AppController::checkWeather() {
     // 防止重复创建任务
     if (weatherTaskHandle != NULL) return; 

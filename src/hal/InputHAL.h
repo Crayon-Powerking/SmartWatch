@@ -1,27 +1,20 @@
 #pragma once
-
 #include <Arduino.h>
 #include <OneButton.h>
-#include <functional> // 必须引用，用于 std::function
+#include <functional>
 #include "AppConfig.h"
 
 class InputHAL {
 public:
-    // 定义一个通用的回调函数类型：不接受参数，返回 void
-    using EventCallback = std::function<void()>;
+    using EventCallback = std::function<void()>;        // 定义一个通用的回调函数类型：不接受参数，返回 void
+    InputHAL(uint8_t pin);                              // 构造函数：需要传入引脚号
+    void begin();                                       // 初始化按键
+    void tick();                                        // 按键轮询心跳
+    bool isPressed();                                   // 检查按键当前是否被按下
 
-    // 构造函数：需要传入引脚号
-    InputHAL(uint8_t pin); 
-
-    void begin();
-    void tick();
-
-    bool isPressed();
-
-    // 注册接口：业务层把函数传进来
-    void attachClick(EventCallback cb);
-    void attachLongPress(EventCallback cb);
-    void attachDuringLongPress(EventCallback cb);
+    void attachClick(EventCallback cb);                 // 注册单击事件回调
+    void attachLongPress(EventCallback cb);             // 注册长按开始事件回调
+    void attachDuringLongPress(EventCallback cb);       // 注册长按持续事件回调
 
 private:
     OneButton btn;

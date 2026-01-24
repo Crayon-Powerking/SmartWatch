@@ -169,9 +169,9 @@ public:
     void onButton(int id) override {}
 
 private:
-    MenuPage* currentData = nullptr;
-    float visualIndex = 0;
-    float cameraY = 0;
+    MenuPage* currentData = nullptr;  // 当前菜单数据
+    float visualIndex = 0;            // 当前视觉索引 (可以是小数，用于平滑滚动)
+    float cameraY = 0;                // 当前摄像机 Y 位置
 
     // 获取考虑了边界限制的光标宽度
     int getSafeWidth(DisplayHAL* display, String str) {

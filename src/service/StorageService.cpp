@@ -8,14 +8,13 @@ void StorageService::begin() {
 }
 
 void StorageService::load() {
-    // 1. 读取业务数据
-    AppData.stepCount = prefs.getInt("steps", 0);
-    AppData.temperature = prefs.getInt("temp", 0);
-    AppData.weatherCode = prefs.getInt("w_code", 99);
-    AppData.lastWeatherTime = prefs.getLong("w_time", 0);
-    AppData.lastStepDayCode = prefs.getInt("step_day", 0);
-    AppData.languageIndex = prefs.getInt("lang", 0);
-    AppData.dinoHighScore = prefs.getLong("dino_hs", 0);
+    AppData.stepCount = prefs.getInt("steps", 0);             // 步数
+    AppData.temperature = prefs.getInt("temp", 0);            // 当前温度
+    AppData.weatherCode = prefs.getInt("w_code", 99);         // 天气代码，99表示未知
+    AppData.lastWeatherTime = prefs.getLong("w_time", 0);     // 上次获取天气的时间戳
+    AppData.lastStepDayCode = prefs.getInt("step_day", 0);    // 上次记录步数的日期代码 (格式: YYYYMMDD)
+    AppData.languageIndex = prefs.getInt("lang", 0);          // 当前语言
+    AppData.dinoHighScore = prefs.getLong("dino_hs", 0);      // 恐龙高分
 }
 
 void StorageService::save() {
@@ -46,11 +45,11 @@ void StorageService::save() {
     if (prefs.getLong("w_time", 0) != currentTime) {
         prefs.putLong("w_time", currentTime);
     }
-
+    // 5. 语言设置
     if (prefs.getInt("lang", 0) != AppData.languageIndex) {
         prefs.putInt("lang", AppData.languageIndex); // 保存语言
     }
-
+    // 6. 恐龙高分
     long currentDinoHs = AppData.dinoHighScore;
     if (prefs.getLong("dino_hs", 0) != currentDinoHs) {
         prefs.putLong("dino_hs", currentDinoHs);

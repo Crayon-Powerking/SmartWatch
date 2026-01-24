@@ -1,15 +1,13 @@
 #pragma once
+#include <vector>
 #include "AppConfig.h"
 #include "model/AppData.h"
 #include "model/MenuTypes.h"
-#include "model/AppBase.h" // 【新增】 引入 App 基类
-#include <vector>
+#include "model/AppBase.h"
 #include "hal/DisplayHAL.h"
 #include "hal/InputHAL.h"
 #include "service/NetworkService.h"
 #include "service/StorageService.h"
-
-// 引入视图
 #include "view/PageWatchFace.h"
 #include "view/PageHorizontalMenu.h" 
 #include "view/PageVerticalMenu.h"
@@ -31,13 +29,9 @@ public:
     AppController(); 
     void begin();
     void tick();
-
-    // 【新增】应用调度接口
-    void startApp(AppBase* app); // 启动一个 App
-    void quitApp();              // 退出当前 App
-
-    // 【新增】延迟重载请求 (修复崩溃 bug)
-    void scheduleReload() { reloadPending = true; }
+    void startApp(AppBase* app);                     // 启动一个 App
+    void quitApp();                                  // 退出当前 App
+    void scheduleReload() { reloadPending = true; }  // 安排重载菜单树
 
     // 公开成员，方便 App 访问硬件 (或者通过 friend)
     MenuController menuCtrl; 
@@ -48,31 +42,27 @@ private:
     SystemToast toast;
 
     // --- 内部私有函数 ---
-    void bindSystemEvents(); // 绑定系统默认按键  
-    void destroyMenuTree();       
-    void checkWeather();          
-    void render();                
-    void checkDayChange();       
+    void bindSystemEvents();            // 绑定系统默认按键  
+    void destroyMenuTree();             // 销毁菜单树     
+    void checkWeather();                // 检查并更新天气数据     
+    void render();                      // 渲染当前画面   
+    void checkDayChange();              // 检查是否跨天，重置步数  
     
     // --- 视图渲染器 ---
-    PageWatchFace watchFace;       
-    PageHorizontalMenu pageHorizontal; 
-    PageVerticalMenu   pageVertical;   
+    PageWatchFace      watchFace;       // 表盘页面
+    PageHorizontalMenu pageHorizontal;  // 横向菜单页面
+    PageVerticalMenu   pageVertical;    // 纵向菜单页面
 
     // --- 菜单数据 (Model) ---
-    MenuPage* rootMenu = nullptr;
-    MenuPage* toolsMenu = nullptr;
+    MenuPage* rootMenu = nullptr;       // 根菜单
+    MenuPage* toolsMenu = nullptr;      // 工具子菜单
 
     // --- 状态标志 ---
-    bool inMenuMode = false;      
-    // 【新增】当前是否正在运行独立 App (游戏)
-    AppBase* currentApp = nullptr; 
-
-    // 【新增】重载标志位
-    bool reloadPending = false;
-
-    unsigned long timerWeather = 0;
-    unsigned long timerSave = 0;
+    bool inMenuMode = false;            // 当前是否在菜单模式 (否则为表盘模式)
+    AppBase* currentApp = nullptr;      // 当前运行的 App 实例
+    bool reloadPending = false;         // 是否有菜单重载请求待处理
+    unsigned long timerWeather = 0;     // 天气更新时间戳
+    unsigned long timerSave = 0;        // 上次保存数据时间戳
 
     // 后台任务相关
     TaskHandle_t weatherTaskHandle = NULL; 

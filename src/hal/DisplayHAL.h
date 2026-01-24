@@ -5,35 +5,32 @@
 
 class DisplayHAL {
 public:
-    DisplayHAL();
-    void begin();
-    void clear();
-    void update();
+    DisplayHAL();                                                      // 构造函数
+    void begin();                                                      // 初始化显示屏
+    void clear();                                                      // 清空显示缓冲区
+    void update();                                                     // 更新显示内容到屏幕
 
     // --- 字体与文本 ---
-    void setFont(const uint8_t* font);
-    void setFontMode(uint8_t mode);
-    int getStrWidth(const char* text);
-    void drawText(int x, int y, const char* text);
+    void setFont(const uint8_t* font);                                  // 设置字体
+    void setFontMode(uint8_t mode);                                     // 设置字体模式 (0=透明, 1=背景填充)
+    int getStrWidth(const char* text);                                  // 获取字符串宽度
+    void drawText(int x, int y, const char* text);                      // 画文本
 
-    // --- 剪裁窗口 (新增) ---
-    // 设置绘图限制区域 (左上角x0,y0, 右下角x1,y1)
-    void setClipWindow(int x0, int y0, int x1, int y1);
-    // 取消限制，恢复全屏绘制
-    void setMaxClipWindow();
+    // --- 剪裁窗口 ---
+    void setClipWindow(int x0, int y0, int x1, int y1);                 // 设置绘图限制区域 (左上角x0,y0, 右下角x1,y1)
+    void setMaxClipWindow();                                            // 取消限制，恢复全屏绘制
 
     // --- 图形绘制 ---
-    void drawIcon(int x, int y, int w, int h, const uint8_t* bitmap);
-    void drawGlyph(int x, int y, uint16_t encoding);
-    void drawFrame(int x, int y, int width, int height);
-    void drawBox(int x, int y, int width, int height);
-    void drawRBox(int x, int y, int width, int height, int radius);
-    void drawLine(int x1, int y1, int x2, int y2);
-    void setDrawColor(uint8_t color);
-
-    void drawCircle(int x0, int y0, int rad); // 画空心圆
-    void drawDisc(int x0, int y0, int rad);   // 画实心圆
-    void drawProgressArc(int x, int y, int radius, float progress);
+    void drawIcon(int x, int y, int w, int h, const uint8_t* bitmap);   // 画图标 (XBM 位图)
+    void drawGlyph(int x, int y, uint16_t encoding);                    // 画单个字符
+    void drawFrame(int x, int y, int width, int height);                // 画空心矩形
+    void drawBox(int x, int y, int width, int height);                  // 画实心矩形
+    void drawRBox(int x, int y, int width, int height, int radius);     // 画圆角矩形
+    void drawLine(int x1, int y1, int x2, int y2);                      // 画直线
+    void setDrawColor(uint8_t color);                                   // 设置绘图颜色 (0=黑, 1=白, 2=反色)
+    void drawCircle(int x0, int y0, int rad);                           // 画空心圆
+    void drawDisc(int x0, int y0, int rad);                             // 画实心圆
+    void drawProgressArc(int x, int y, int radius, float progress);     // 画动态圆弧 (进度0.0~1.0)
     
 
 private:

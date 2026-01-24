@@ -1,15 +1,15 @@
 #pragma once
 #include "Page.h"
-#include "model/AppData.h"   // 数据源
-#include "assets/AppIcons.h" // 图标资源
+#include "model/AppData.h"
+#include "assets/AppIcons.h"
 #include <stdio.h>
-#include <time.h>            // 系统时间库
+#include <time.h>
 
 class PageWatchFace : public Page {
 public:
     void draw(DisplayHAL* display) override {
         // ==========================================
-        // 1. 顶部 Header (日期 & WiFi & 电池)
+        // --------------- 顶部状态栏 ---------------
         // ==========================================
         display->setFont(u8g2_font_6x10_tf);
         
@@ -36,7 +36,7 @@ public:
         display->drawLine(0, 12, 128, 12);
 
         // ==========================================
-        // 2. 中间时间 (大字体)
+        // --------------- 时间显示 ---------------
         // ==========================================
         String timeStr = getTimeString();
         int sec = getSecond();
@@ -56,7 +56,7 @@ public:
         display->drawText(TIME_X + wMain + 2, TIME_Y, secStr);
 
         // ==========================================
-        // 3. 底部 (天气 & 步数) - 锚点对齐布局
+        // --------------- 底部状态栏 ---------------
         // ==========================================
         int footerY = 64;               // 屏幕底部坐标
         int iconSize = 16;              // 图标大小 16x16
@@ -84,7 +84,7 @@ public:
         // ------------------------------------------------
         // 1. 绘制脚印图标 (固定在最右侧 128-16 = 112)
         int stepIconX = 128 - iconSize; 
-        display->drawIcon(stepIconX, iconY, iconSize, iconSize, icon_footprint_16);
+        display->drawIcon(stepIconX, iconY, iconSize, iconSize, icon_footprint);
 
         // 2. 计算文字位置 (从图标左边倒推)
         char stepStr[16];
@@ -122,7 +122,7 @@ private:
         if (code >= 30 && code <= 38) return icon_weather_fog;
 
         // 默认 / 未知 (99) -> 多云
-        return icon_weather_cloudy; 
+        return icon_fault; 
     }
 
     // --- 辅助：获取时间字符串 (HH:MM) ---

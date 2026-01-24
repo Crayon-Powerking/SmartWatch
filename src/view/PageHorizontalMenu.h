@@ -3,25 +3,11 @@
 #include "model/MenuTypes.h"
 #include <Arduino.h>
 
-#define ICON_W      32
-#define ICON_H      32
-
-// 间距保持紧凑
-#define ITEM_SPACE  38.0f
-
-// ==========================================
-// 【新增参数】控制旋转木马的弧度
-// ==========================================
-// 基准 Y 坐标 (中心图标顶部距离屏幕上边缘的像素)
-// 稍微改小一点(12)，让中心图标看起来更高
-#define BASE_Y      12
-
-// 曲线陡峭程度系数 (抛物线开口大小)
-// 值越大，两边下沉得越快。建议范围 0.003 ~ 0.01
-// 0.006 是一个在 128宽屏幕上看起来比较舒服的弧度
-#define CURVE_STEEP 0.006f
-// ==========================================
-
+#define ICON_W      32      // 图标宽度
+#define ICON_H      32      // 图标高度
+#define ITEM_SPACE  38.0f   // 图标间距 (中心点距离)
+#define BASE_Y      12      // 图标基准Y位置
+#define CURVE_STEEP 0.006f  // 抛物线陡峭度参数
 
 class PageHorizontalMenu : public Page {
 public:

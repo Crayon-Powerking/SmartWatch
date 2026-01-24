@@ -20,20 +20,33 @@ static const char* STR_GAME[]       = {"Games",        "娱乐游戏"};
 static const char* STR_ABOUT[]      = {"About",        "关于本机"};
 static const char* STR_ALARM[]      = {"Alarm",        "闹钟提醒"};
 static const char* STR_CALENDAR[]   = {"Calendar",     "日历查看"};
+static const char* STR_exit[]       = {"Exit",         "菜单退出"};
 
 // --- 设置菜单 ---
-static const char* STR_LANG_LABEL[] = {"Language",     "多语言设置"}; 
+static const char* STR_LANG_LABEL[] = {"Language",     "语言设置"}; 
 static const char* STR_LANG_VAL[]   = {"English",      "简体中文"}; 
 static const char* STR_REBOOT[]     = {"Reboot",       "重启设备"}; 
 
-// --- 天气 App 专用 (新增) ---
+// --- 天气 App 专用 ---
 static const char* STR_CITY_SELECT[]= {"City Slots",   "城市管理"};
 static const char* STR_ADD_CITY[]   = {"+ Add City",   "+ 添加城市"};
 static const char* STR_EMPTY_SLOT[] = {"[ Empty ]",    "[ 空槽位 ]"};
 static const char* STR_HOLD_DEL[]   = {"Hold to Del",  "长按删除"};
-static const char* STR_TODAY[]      = {"TDY",        "今天"};
+static const char* STR_TODAY[]      = {"TDY",          "今天"};
 static const char* STR_TOMORROW[]   = {"TMR",          "明天"};
 static const char* STR_DAY_AFTER[]  = {"DAT",          "后天"};
+// 常用城市名称
+static const char* STR_Beijing[]     = {"Beijing",      "北京"};
+static const char* STR_Shanghai[]    = {"Shanghai",     "上海"};
+static const char* STR_Guangzhou[]   = {"Guangzhou",    "广州"};
+static const char* STR_Shenzhen[]    = {"Shenzhen",     "深圳"};
+static const char* STR_Chengdu[]     = {"Chengdu",      "成都"};
+static const char* STR_Hangzhou[]    = {"Hangzhou",     "杭州"};
+static const char* STR_Wuhan[]       = {"Wuhan",        "武汉"};
+static const char* STR_Xian[]        = {"Xi'an",        "西安"};
+static const char* STR_Nanjing[]     = {"Nanjing",      "南京"};
+static const char* STR_Suzhou[]      = {"Suzhou",       "苏州"};
+static const char* STR_Hefei[]      =  {"Hefei",        "合肥"};
 
 // --- 天气状态映射 (英文使用缩写以适应屏幕) ---
 // 0-3
@@ -60,7 +73,7 @@ static const char* STR_W_SAND[]     = {"Sand",         "沙尘"};
 
 static const char* STR_W_UNKNOWN[]  = {"N/A",          "未知"};
 
-// --- 游戏名称 (新增) ---
+// --- 游戏名称 ---
 static const char* STR_GAME_DINO[]      = {"Dino Run",         "谷歌小恐龙"};
 static const char* STR_GAME_2048[]      = {"2048",             "2048数字版"};
 static const char* STR_GAME_TETRIS[]    = {"Tetris",           "俄罗斯方块"};

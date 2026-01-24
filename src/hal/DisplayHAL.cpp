@@ -1,6 +1,6 @@
 #include "hal/DisplayHAL.h"
 
-DisplayHAL::DisplayHAL() 
+DisplayHAL::DisplayHAL()
     : u8g2(U8G2_R0, PIN_OLED_CS, PIN_OLED_DC, PIN_OLED_RES) {
 }
 
@@ -19,7 +19,6 @@ void DisplayHAL::update() {
     u8g2.sendBuffer();
 }
 
-// --- 新增的实现 ---
 void DisplayHAL::setClipWindow(int x0, int y0, int x1, int y1) {
     u8g2.setClipWindow(x0, y0, x1, y1);
 }
@@ -27,7 +26,6 @@ void DisplayHAL::setClipWindow(int x0, int y0, int x1, int y1) {
 void DisplayHAL::setMaxClipWindow() {
     u8g2.setMaxClipWindow();
 }
-// ------------------
 
 void DisplayHAL::setFont(const uint8_t* font) {
     u8g2.setFont(font);

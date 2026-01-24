@@ -7,19 +7,19 @@ class SystemToast {
 public:
     // 触发弹窗
     void show(const char* msg, int durationMs = 1500) {
-        message = msg;
-        startTime = millis();
-        totalDuration = durationMs;
-        state = STATE_ENTERING;
-        isVisible = true;
+        message = msg;                        // 设置消息内容
+        startTime = millis();                 // 记录开始时间
+        totalDuration = durationMs;           // 设置总持续时间
+        state = STATE_ENTERING;               // 重置状态机
+        isVisible = true;                     // 标记为可见
     }
 
     // 在每一帧渲染时调用
     void draw(DisplayHAL* display) {
-        if (!isVisible) return;
+        if (!isVisible) return;              
 
         unsigned long now = millis();
-        float progress = 0.0f;
+        float progress = 0.0f;               
         
         // --- 1. 状态机与动画进度计算 ---
         long elapsed = now - startTime;
@@ -104,14 +104,13 @@ private:
         STATE_EXITING
     };
 
-    const char* message = "";
-    unsigned long startTime = 0;
-    unsigned long exitStartTime = 0;
-    int totalDuration = 0;
-    bool isVisible = false;
-    State state = STATE_ENTERING;
-
-    const int ANIM_DURATION = 300; // 动画时长 300ms
+    const char* message = "";           // 消息内容
+    unsigned long startTime = 0;        // 动画开始时间
+    unsigned long exitStartTime = 0;    // 退场动画开始时间
+    int totalDuration = 0;              // 总持续时间
+    bool isVisible = false;             // 当前是否可见
+    State state = STATE_ENTERING;       // 当前状态机状态
+    const int ANIM_DURATION = 300;      // 动画时长 300ms
 
     // --- 缓动算法: EaseOutBack ---
     // x: 0.0 到 1.0

@@ -8,39 +8,28 @@
 #include "apps/weather/WeatherApp.h"
 
 void MenuFactory::build(AppController* app) {
-    app->destroyMenuTree();
-    int lang = AppData.languageIndex;
+    app->destroyMenuTree();                                 // 先销毁旧菜单树
+    int lang = AppData.languageIndex;                       // 当前语言索引
 
-    // ===========================
-    // 1. 外包生产 (调用 Builders)
-    // ===========================
-    // 游戏页 -> 交给 GamesBuilder
-    MenuPage* gamePage = GamesBuilder::build(app);
+    MenuPage* gamePage = GamesBuilder::build(app);          // 游戏页 -> 交给 GamesBuilder
+    MenuPage* settingsPage = SettingsBuilder::build(app);   // 设置页 -> 交给 SettingsBuilder
     
-    // 设置页 -> 交给 SettingsBuilder
-    MenuPage* settingsPage = SettingsBuilder::build(app); 
-    
-    // ===========================
-    // 2. 总装车间 (组装 Home)
-    // ===========================
-    app->rootMenu = app->createPage("Home", LAYOUT_ICON);
+    app->rootMenu = app->createPage("Home", LAYOUT_ICON);   // 根菜单，图标布局
 
-    // --- 挂载 设置 ---
+    //----------------- 添加各个一级菜单项 ----------------//
+    // 设置应用
     app->rootMenu->add(STR_SETTINGS[lang], icon_setting, [app, settingsPage](){
         app->menuCtrl.enter(settingsPage);
     });
-
-    // --- 挂载 天气 ---
+    // 天气应用
     app->rootMenu->add(STR_WEATHER[lang], icon_weather, [app](){ 
         app->startApp(new WeatherApp(app));
     });
-
-    // --- 挂载 游戏 ---
+    // 游戏应用
     app->rootMenu->add(STR_GAME[lang], icon_game, [app, gamePage](){
         app->menuCtrl.enter(gamePage);
     });
 
-    // --- 挂载 其他 (占位) ---
     app->rootMenu->add(STR_CALENDAR[lang], icon_calendar, [](){});
     app->rootMenu->add(STR_ALARM[lang],    icon_alarm,    [](){});
     app->rootMenu->add(STR_TOOLS[lang],    icon_tool,     [](){});
@@ -48,7 +37,7 @@ void MenuFactory::build(AppController* app) {
         app->startApp(new AboutApp(app));
     });
     
-    // 默认选中中间
+    //初始选择居中
     if (!app->rootMenu->items.empty()) {
         app->rootMenu->selectedIndex = app->rootMenu->items.size() / 2;
     }

@@ -4,8 +4,8 @@
 #define PROJECT_NAME "SmartWatch"
 #define PROJECT_VERSION "0.1.0"
 
-// --- 硬件引脚定义 (基于 ESP32 VSPI) ---
-// 你的 OLED 屏幕引脚定义在这里，以后改线只改这里
+// --- 硬件引脚定义 (基于 ESP32 Wroom) ---
+// OLED 显示屏引脚
 #define PIN_OLED_CS   5
 #define PIN_OLED_DC   16
 #define PIN_OLED_RES  4
@@ -17,12 +17,15 @@
 #define PIN_BTN_DOWN  14  // D14 -> 减少
 
 // --- 用户配置 (User Configuration) ---
-// 以后要改密码，只改这一个文件，不动 main.cpp
-#define WIFI_SSID     "8513"
-#define WIFI_PASS     "ai123456"
-
-#define WEATHER_KEY   "SvagmpHNnsfuweKoz"
-#define WEATHER_CITY  "Hefei"
+// WiFi 设置
+// #define WIFI_SSID     "8513"
+// #define WIFI_PASS     "ai123456"
+#define WIFI_SSID     "User"
+#define WIFI_PASS     "Crayon666"
+// 天气 API 设置
+#define WEATHER_KEY         "SvagmpHNnsfuweKoz"
+#define WEATHER_CITY        "hefei"
+#define WEATHER_CITY_index  10
 
 // 1. 自动保存间隔 (毫秒)
 // 比如：5分钟 = 5 * 60 * 1000 = 300000

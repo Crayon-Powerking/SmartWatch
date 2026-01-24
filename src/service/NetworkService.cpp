@@ -25,6 +25,7 @@ void NetworkService::tick() {
     }
 }
 
+// 获取实况天气
 WeatherResult NetworkService::fetchWeather(const char* key, const char* city) {
     WeatherResult result = {false, 0, 99}; // 初始化默认值
 
@@ -69,6 +70,7 @@ WeatherResult NetworkService::fetchWeather(const char* key, const char* city) {
     return result;
 }
 
+// 获取3天预报
 WeatherForecast NetworkService::fetchForecast(const char* key, const char* city) {
     WeatherForecast result;
     result.success = false;

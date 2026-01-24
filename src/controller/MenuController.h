@@ -1,16 +1,15 @@
 #pragma once
 #include <vector>
-#include <Arduino.h> // 需要 abs()
+#include <Arduino.h>
 #include "model/MenuTypes.h"
 
 class MenuController {
 public:
     void init(MenuPage* root) {
-        rootMenu = root;
-        menuStack.clear();
-        current = rootMenu;
-        // 初始化时，视觉位置直接等于逻辑位置，避免开机动画乱飞
-        if (current) visualIndex = (float)current->selectedIndex;
+        rootMenu = root;                                           // 设置根菜单
+        menuStack.clear();                                         // 清空导航栈
+        current = rootMenu;                                        // 设置当前页面为根菜单
+        if (current) visualIndex = (float)current->selectedIndex;  // 初始化视觉索引
     }
 
     // --- 动画核心：每一帧都计算插值 ---
@@ -41,7 +40,6 @@ public:
             current->selectedIndex++;
         }
     }
-
     void prev() {
         if (!current) return;
         if (current->selectedIndex > 0) {
