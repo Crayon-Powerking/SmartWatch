@@ -36,6 +36,7 @@ static const char* STR_TODAY[]      = {"TDY",          "今天"};
 static const char* STR_TOMORROW[]   = {"TMR",          "明天"};
 static const char* STR_DAY_AFTER[]  = {"DAT",          "后天"};
 // 常用城市名称
+static const char* STR_Hefei[]      =  {"Hefei",        "合肥"};
 static const char* STR_Beijing[]     = {"Beijing",      "北京"};
 static const char* STR_Shanghai[]    = {"Shanghai",     "上海"};
 static const char* STR_Guangzhou[]   = {"Guangzhou",    "广州"};
@@ -46,7 +47,6 @@ static const char* STR_Wuhan[]       = {"Wuhan",        "武汉"};
 static const char* STR_Xian[]        = {"Xi'an",        "西安"};
 static const char* STR_Nanjing[]     = {"Nanjing",      "南京"};
 static const char* STR_Suzhou[]      = {"Suzhou",       "苏州"};
-static const char* STR_Hefei[]      =  {"Hefei",        "合肥"};
 
 // --- 天气状态映射 (英文使用缩写以适应屏幕) ---
 // 0-3

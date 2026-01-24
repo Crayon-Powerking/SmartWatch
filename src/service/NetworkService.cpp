@@ -97,8 +97,14 @@ WeatherForecast NetworkService::fetchForecast(const char* key, const char* city)
 
             if (!error) {
                 // 1. 获取城市名 (用于确认)
-                result.cityName = doc["results"][0]["location"]["name"].as<String>();
-                
+                const char* namePtr = doc["results"][0]["location"]["name"].as<const char*>();
+                if (namePtr) {
+                    // 只复制前 31 个字符，留一个位置给结束符 '\0'
+                    strncpy(result.cityName, namePtr, sizeof(result.cityName) - 1);
+                    result.cityName[sizeof(result.cityName) - 1] = '\0'; // 强制封口，防止溢出
+                } else {
+                    strcpy(result.cityName, "Unknown");
+                }
                 // 2. 遍历 daily 数组 (通常只有3个)
                 JsonArray daily = doc["results"][0]["daily"];
                 for (int i = 0; i < 3 && i < daily.size(); i++) {
@@ -108,7 +114,7 @@ WeatherForecast NetworkService::fetchForecast(const char* key, const char* city)
                 }
                 
                 result.success = true;
-                Serial.printf("[Weather] Forecast Success: %s\n", result.cityName.c_str());
+                Serial.printf("[Weather] Forecast Success: %s\n", result.cityName);
             } else {
                 Serial.print("[Weather] Forecast JSON Error: ");
                 Serial.println(error.c_str());

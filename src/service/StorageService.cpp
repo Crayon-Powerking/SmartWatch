@@ -15,6 +15,13 @@ void StorageService::load() {
     AppData.lastStepDayCode = prefs.getInt("step_day", 0);    // 上次记录步数的日期代码 (格式: YYYYMMDD)
     AppData.languageIndex = prefs.getInt("lang", 0);          // 当前语言
     AppData.dinoHighScore = prefs.getLong("dino_hs", 0);      // 恐龙高分
+    String cityCode = prefs.getString("curr_city", ""); 
+    if (cityCode.length() > 0) {
+        strncpy(AppData.currentCityCode, cityCode.c_str(), 31);
+        AppData.currentCityCode[31] = '\0';
+    } else {
+        strcpy(AppData.currentCityCode, ""); // 为空
+    }
 }
 
 void StorageService::save() {
@@ -53,5 +60,11 @@ void StorageService::save() {
     long currentDinoHs = AppData.dinoHighScore;
     if (prefs.getLong("dino_hs", 0) != currentDinoHs) {
         prefs.putLong("dino_hs", currentDinoHs);
+    }
+    // 7. 当前天气城市代码
+    String savedCity = prefs.getString("curr_city", "");
+    String currentCity = String(AppData.currentCityCode);
+    if (savedCity != currentCity) {
+        prefs.putString("curr_city", currentCity);
     }
 }

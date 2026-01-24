@@ -69,14 +69,20 @@ public:
         // ------------------------------------------------
         // 左侧锚点：天气 (图标固定 X=0，文字向右生长)
         // ------------------------------------------------
-        // 1. 获取并绘制图标
-        const uint8_t* weatherIcon = getWeatherIcon(AppData.weatherCode);
-        display->drawIcon(0, iconY, iconSize, iconSize, weatherIcon);
+        if (AppData.weatherCode == 99) {
+            // 绘制占位符
+            display->drawText(2, textBaseY, "--");
+            display->drawIcon(0, iconY, iconSize, iconSize, icon_fault);
+        } else {
+            // 1. 获取并绘制图标
+            const uint8_t* weatherIcon = getWeatherIcon(AppData.weatherCode);
+            display->drawIcon(0, iconY, iconSize, iconSize, weatherIcon);
 
-        // 2. 绘制温度 (从图标右边 18px 开始)
-        char tempStr[16];
-        sprintf(tempStr, "%d C", AppData.temperature); 
-        display->drawText(18, textBaseY, tempStr);
+            // 2. 绘制温度 (从图标右边 18px 开始)
+            char tempStr[16];
+            sprintf(tempStr, "%d C", AppData.temperature); 
+            display->drawText(18, textBaseY, tempStr);
+        }
 
 
         // ------------------------------------------------
@@ -101,28 +107,13 @@ private:
     // --- [核心] 天气图标映射逻辑 ---
     // 根据 AppIcons.h 中的资源进行匹配
     const uint8_t* getWeatherIcon(int code) {
-        // 1. 晴 (Sunny) - Code 0
-        if (code == 0) return icon_weather_sunny;
-
-        // 2. 晚晴 (Sunny Evening) - Code 1
-        // 注意：这里用了你 AppIcons.h 里特有的拼写 "evenning"
-        if (code == 1) return icon_weather_sunny_evening;
-
-        // 3. 多云 (Cloudy) - Code 4~9
-        // Code 2,3 (晴间多云) 也可以归为此类
-        if ((code >= 2 && code <= 9)) return icon_weather_cloudy;
-
-        // 4. 雨 (Rain) - Code 10~19
-        if (code >= 10 && code <= 19) return icon_weather_rain;
-
-        // 5. 雪 (Snow) - Code 20~29
-        if (code >= 20 && code <= 29) return icon_weather_snow;
-
-        // 6. 雾霾 (Fog) - Code 30~38
-        if (code >= 30 && code <= 38) return icon_weather_fog;
-
-        // 默认 / 未知 (99) -> 多云
-        return icon_fault; 
+        if (code == 1 || code == 3) return icon_weather_sunny_evening;  // 晚上
+        if (code == 0 || code == 2) return icon_weather_sunny;          // 白天
+        if (code >= 4 && code <= 9) return icon_weather_cloudy;         // 多云/阴
+        if (code >= 10 && code <= 19) return icon_weather_rain;         // 雨
+        if (code >= 20 && code <= 25) return icon_weather_snow;         // 雪
+        if (code >= 26 && code <= 38) return icon_weather_fog;          // 雾/霾/沙
+        return icon_fault;                                              // 故障/未知
     }
 
     // --- 辅助：获取时间字符串 (HH:MM) ---

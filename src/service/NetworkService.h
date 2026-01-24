@@ -16,7 +16,8 @@ struct DailyInfo {
 // --- 未来3天预报结果 ---
 struct WeatherForecast {
     bool success;
-    String cityName;    // 获取到的城市名
+    char cityName[32];  // 获取到的城市名
+    char cityCode[32];  // 城市代码
     DailyInfo days[3];  // days[0]=今天, days[1]=明天, days[2]=后天
 };
 

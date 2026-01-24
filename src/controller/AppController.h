@@ -29,6 +29,7 @@ public:
     AppController(); 
     void begin();
     void tick();
+    void forceWeatherUpdate();
     void startApp(AppBase* app);                     // 启动一个 App
     void quitApp();                                  // 退出当前 App
     void scheduleReload() { reloadPending = true; }  // 安排重载菜单树

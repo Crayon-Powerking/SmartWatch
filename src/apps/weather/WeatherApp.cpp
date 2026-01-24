@@ -12,6 +12,7 @@ extern InputHAL btnSelect;
 
 // 预设城市列表
 const std::vector<PresetCity> WeatherApp::PRESETS = {
+    {STR_Hefei,     "hefei"},
     {STR_Beijing,   "beijing"},
     {STR_Shanghai,  "shanghai"},
     {STR_Guangzhou, "guangzhou"},
@@ -21,8 +22,7 @@ const std::vector<PresetCity> WeatherApp::PRESETS = {
     {STR_Wuhan,     "wuhan"},
     {STR_Xian,      "xian"},
     {STR_Nanjing,   "nanjing"},
-    {STR_Suzhou,    "suzhou"},
-    {STR_Hefei,     "hefei"}
+    {STR_Suzhou,    "suzhou"}
 };
 
 // App 生命周期接口实现
@@ -40,14 +40,47 @@ void WeatherApp::onRun(AppController* sys) {
     selectionSmooth = 0.0f; 
     pendingWeatherUpdate = false; 
 
+    // 加载槽位数据
     loadSlots();
-    
-    // 如果当前槽位有数据，且没有天气数据，则刷新
+    // 缓存优先策略
+    bool needImmediateRefresh = true;
+
+    // 如果当前有选中的有效城市
     if (!slots[activeSlotIndex].isEmpty) {
+        WeatherForecast cachedData; 
+        // 尝试从 Flash 读取名为 "w_cache" 的缓存结构体
+        bool hasCache = sys->storage.loadStruct("w_cache", cachedData);
+        
+        if (hasCache) {
+            // 检查缓存的城市代码是否和当前选中一致
+            if (strcmp(cachedData.cityCode, slots[activeSlotIndex].code) == 0) {
+                // 加载缓存数据到内存
+                this->forecast = cachedData;   // 载入缓存
+                this->forecast.success = true; // 确保标记为成功
+                needImmediateRefresh = false;  // 暂时不需要转圈圈
+                
+                // 检查缓存时间戳，决定是否需要静默刷新
+                long cacheTime = sys->storage.getLong("w_cache_t", 0);
+                long nowTime = time(NULL);
+                
+                // 如果时间没同步(刚开机 < 10000) 或者 缓存确实太旧了
+                if (nowTime < 10000 || (nowTime - cacheTime > 7200)) {
+                    pendingWeatherUpdate = true; // 标记稍后静默刷新
+                }
+            }
+        }
+    } else {
+        // 如果连城市都没选，肯定不需要刷新
+        needImmediateRefresh = false;
+    }
+
+    // 立即刷新天气（如果需要的话）
+    if (needImmediateRefresh && !slots[activeSlotIndex].isEmpty) {
         refreshWeather();
     }
 
     // --- 注册按键 ---
+    // UP 单击
     btnUp.attachClick([this](){
         if (viewState == VIEW_MAIN) {
             // Main页只在 Back(0) 和 City(1) 之间切换
@@ -57,6 +90,19 @@ void WeatherApp::onRun(AppController* sys) {
         }
     });
 
+    // UP 连发
+    btnUp.attachDuringLongPress([this](){
+        static unsigned long lastTrig = 0;
+        // 每 150ms 触发一次
+        if (millis() - lastTrig > 150) {
+            if (viewState != VIEW_MAIN) { // 主页只有两项，不需要连发
+                if (selectedIndex > -1) selectedIndex--;
+            }
+            lastTrig = millis();
+        }
+    });
+
+    // DOWN 单击
     btnDown.attachClick([this](){
         if (viewState == VIEW_MAIN) {
             if (selectedIndex < 1) selectedIndex++;
@@ -68,10 +114,26 @@ void WeatherApp::onRun(AppController* sys) {
         }
     });
 
+    // DOWN 连发
+    btnDown.attachDuringLongPress([this](){
+        static unsigned long lastTrig = 0;
+        if (millis() - lastTrig > 150) {
+            if (viewState == VIEW_SLOTS) {
+                if (selectedIndex < 4) selectedIndex++;
+            } 
+            else if (viewState == VIEW_LIBRARY) {
+                if (selectedIndex < (int)PRESETS.size() - 1) selectedIndex++;
+            }
+            lastTrig = millis();
+        }
+    });
+
+    // SELECT 单击
     btnSelect.attachClick([this](){
         handleInput();
     });
 
+    // SELECT 长按
     btnSelect.attachLongPress([this, sys](){
         if (!forecast.success && !isLoading && sys->network.isConnected()) {
             static unsigned long lastRetryTick = 0;
@@ -82,9 +144,7 @@ void WeatherApp::onRun(AppController* sys) {
             }
         }
         if (viewState == VIEW_SLOTS) {
-            // 这里留空！
-            // 我们在 onLoop 里手动接管了长按进度条和删除逻辑。
-            // 如果这里再写代码，就会出现“锁住了但还能删”的 Bug。
+            // 留空，onLoop 接管
         } 
         else if (viewState == VIEW_LIBRARY) {
             viewState = VIEW_SLOTS;
@@ -104,57 +164,45 @@ void WeatherApp::onExit() {
 
 int WeatherApp::onLoop() {
     unsigned long now = millis();                                
-    // 计算两帧之间的时间差 (秒)
     float dt = (now - lastFrameTime) / 1000.0f;
     lastFrameTime = now;
 
-    // ----- 光标动画 -----
+    // 光标平滑动画
     float diffIdx = (float)selectedIndex - selectionSmooth;
     if (abs(diffIdx) > 0.01f) selectionSmooth += diffIdx * 0.25f;
     else selectionSmooth = (float)selectedIndex;
 
-    // ----- 视口滚动 -----
+    // 视口滚动动画
     float cursorPixelY = selectionSmooth * 16.0f;
     float targetCamY = cursorPixelY - 24.0f;
     if (targetCamY < 0) targetCamY = 0;
     float diffScroll = targetCamY - scrollY;
     scrollY += diffScroll * 0.2f;
 
-    // --- 长按删除检测逻辑 ---
-    // 只有在 SLOTS 视图，且选中了有效城市
+    // 长按删除逻辑 (仅在 SLOTS 视图)
     if (viewState == VIEW_SLOTS && selectedIndex >= 0 && !slots[selectedIndex].isEmpty) {
-        
-        // 规则：只有当城市数量 > 1 时，才允许删除
-        if (getCityCount() > 1) {
-            
+        bool isLocked = (selectedIndex == activeSlotIndex);
+        if (!isLocked) {
             if (btnSelect.isPressed()) {
-                // 目标：1.5秒充满。 即 1.0 / 1.5 = 0.66 per second
                 deleteProgress += 0.7f * dt; 
-                // 封顶
                 if (deleteProgress > 1.0f) deleteProgress = 1.0f;
-                // 满了就删除
                 if (deleteProgress >= 1.0f) {
                     deleteCurrentSlot();
                     deleteProgress = 0.0f; 
-                    
-                    // 删除后，设置 500ms 的点击冷却时间
-                    // 这样用户松手时产生的 click 信号会被 handleInput 忽略
-                    ignoreClickUntil = millis() + 500;
+                    ignoreClickUntil = millis() + 500; // 防误触
                 }
             } else {
-                // 松手回退 (稍微快一点回退)
-                deleteProgress -= 2.0f * dt;
+                deleteProgress -= 2.0f * dt;    // 松手回退
                 if (deleteProgress < 0.0f) deleteProgress = 0.0f;
             }
         } else {
-            // 只有一个城市，锁住，不准动进度
             deleteProgress = 0.0f;
         }
     } else {
         deleteProgress = 0.0f;
     }
 
-    // --- 视图切换动画 ---
+    // 视图切换动画 & 静默刷新触发
     if (pendingWeatherUpdate && abs(slideX - targetSlideX) < 2.0f) {
         pendingWeatherUpdate = false;
         refreshWeather();
@@ -164,6 +212,84 @@ int WeatherApp::onLoop() {
 
     render();
     return 0; 
+}
+
+void WeatherApp::refreshWeather() {
+    if (slots[activeSlotIndex].isEmpty) return;
+    if (!forecast.success) {
+        isLoading = true;
+        render(); // 立即重绘
+    }
+    // 发起网络请求
+    WeatherForecast newForecast = sys->network.fetchForecast(WEATHER_KEY, slots[activeSlotIndex].code);
+    if (newForecast.success) {
+        this->forecast = newForecast;
+        // 保存缓存
+        strcpy(this->forecast.cityCode, slots[activeSlotIndex].code);
+        sys->storage.saveStruct("w_cache", this->forecast);
+        sys->storage.putLong("w_cache_t", (long)time(NULL)); // 记录时间戳
+        strcpy(AppData.currentCityCode, slots[activeSlotIndex].code);
+        sys->forceWeatherUpdate();
+    }
+    isLoading = false;
+    render();
+}
+
+void WeatherApp::loadSlots() {
+    bool success = sys->storage.loadStruct("city_conf", slots);
+    bool allEmpty = true;
+    // 检查数据有效性
+    for(int i=0; i<5; i++) {
+        if(!slots[i].isEmpty) {
+            if (strlen(slots[i].name) == 0) slots[i].isEmpty = true; 
+            else allEmpty = false;
+        }
+    }
+    if (!success || allEmpty) {
+        int L = AppData.languageIndex;
+        if (WEATHER_CITY_default < (int)PRESETS.size()) {
+            strncpy(slots[0].name, PRESETS[WEATHER_CITY_default].names[L], 15);
+            slots[0].name[15] = '\0';
+            strcpy(slots[0].code, PRESETS[WEATHER_CITY_default].code);
+            slots[0].isEmpty = false;
+            for(int i=1; i<5; i++) slots[i].isEmpty = true;
+        }
+        // 初始化完立刻保存
+        saveSlots();
+        strcpy(AppData.currentCityCode, slots[0].code);
+    }
+
+    activeSlotIndex = -1; 
+    if (strlen(AppData.currentCityCode) > 0) {
+        for (int i=0; i<5; i++) {
+            // 找到了匹配的城市
+            if (!slots[i].isEmpty && strcmp(slots[i].code, AppData.currentCityCode) == 0) {
+                activeSlotIndex = i;
+                break;
+            }
+        }
+    }
+    if (activeSlotIndex == -1) {
+        // 遍历寻找第一个有效的城市
+        for (int i = 0; i < 5; i++) {
+            if (!slots[i].isEmpty) {
+                activeSlotIndex = i;
+                strcpy(AppData.currentCityCode, slots[i].code);
+                break;
+            }
+        }
+    }
+    if (activeSlotIndex == -1) activeSlotIndex = 0;
+}
+
+void WeatherApp::saveSlots() {
+    // 更新全局当前城市代码
+    if (activeSlotIndex >= 0 && !slots[activeSlotIndex].isEmpty) {
+        strcpy(AppData.currentCityCode, slots[activeSlotIndex].code);
+    }
+    // 保存槽位配置
+    sys->storage.saveStruct("city_conf", slots);
+    sys->storage.save(); 
 }
 
 void WeatherApp::handleInput() {
@@ -199,12 +325,15 @@ void WeatherApp::handleInput() {
                 targetSlideX = -256; 
                 selectedIndex = 0; 
             } else {
-                // 点击已有城市：这才是真正切换“当前天气城市”的时候
-                activeSlotIndex = selectedIndex;
+                // 切换了主城市
+                if (activeSlotIndex != selectedIndex) {
+                    activeSlotIndex = selectedIndex;
+                    strcpy(AppData.currentCityCode, slots[activeSlotIndex].code);
+                    pendingWeatherUpdate = true; // 城市变了，需要刷新
+                }
                 viewState = VIEW_MAIN;
                 targetSlideX = 0;
                 selectedIndex = 1;
-                pendingWeatherUpdate = true;
             }
             break;
 
@@ -221,7 +350,8 @@ void WeatherApp::handleInput() {
             // 选中城市，填入 editingSlotIndex 指向的槽位
             if (editingSlotIndex >= 0 && editingSlotIndex < 5) {
                 CitySlot& slot = slots[editingSlotIndex];
-                strcpy(slot.name, PRESETS[selectedIndex].names[L]);
+                strncpy(slot.name, PRESETS[selectedIndex].names[L], 15);
+                slot.name[15] = '\0';
                 strcpy(slot.code, PRESETS[selectedIndex].code);
                 slot.isEmpty = false;
                 
@@ -237,63 +367,54 @@ void WeatherApp::handleInput() {
     }
 }
 
-void WeatherApp::refreshWeather() {
-    if (slots[activeSlotIndex].isEmpty) return;
-    isLoading = true;
-    render(); // 立即重绘以显示 Loading
+void WeatherApp::deleteCurrentSlot() {
+    // 清除数据
+    memset(&slots[selectedIndex], 0, sizeof(CitySlot));
+    slots[selectedIndex].isEmpty = true;
     
-    // 发起网络请求
-    forecast = sys->network.fetchForecast(WEATHER_KEY, slots[activeSlotIndex].code);
-    isLoading = false;
+    // 智能交接逻辑
+    // 如果删除的正是当前主页显示的城市 (activeSlotIndex)
+    if (selectedIndex == activeSlotIndex) {
+        int newActive = -1;
+        // 遍历所有槽位，寻找第一个有数据的槽位做替补
+        for (int i = 0; i < 5; i++) {
+            if (!slots[i].isEmpty) {
+                newActive = i;
+                break; // 找到一个就停
+            }
+        }
+        // 更新活跃索引
+        activeSlotIndex = newActive;
+        // 如果找到了新城市，标记需要刷新天气
+        if (newActive != -1) {
+            pendingWeatherUpdate = true; 
+        }
+    }
+    // 保存
+    saveSlots();
 }
 
-void WeatherApp::loadSlots() {
-    int L = AppData.languageIndex;
-    for (int i=0; i<5; i++) slots[i].isEmpty = true;
-    strcpy(slots[0].name, PRESETS[WEATHER_CITY_index].names[L]);
-    strcpy(slots[0].code, PRESETS[WEATHER_CITY_index].code);
-    slots[0].isEmpty = false;
+int WeatherApp::getCityCount() {
+    int count = 0;
+    for (int i = 0; i < 5; i++) {
+        if (!slots[i].isEmpty) {
+            count++;
+        }
+    }
+    return count;
 }
 
-void WeatherApp::saveSlots() {
-    // 暂未实现
-}
-
+// 将天气代码转化为对应图标和文字
 const uint8_t* WeatherApp::getWeatherIcon(int code) {
-    // 夜间晴/夜间多云
-    if (code == 1 || code == 3) {
-        return icon_weather_sunny_evening; 
-    }
-
-    // 白天晴
-    if (code == 0 || code == 2) {
-        return icon_weather_sunny;
-    }
-    
-    // 多云 / 阴天
-    if (code >= 4 && code <= 9) {
-        return icon_weather_cloudy;
-    }
-    
-    // 雨
-    if (code >= 10 && code <= 19) {
-        return icon_weather_rain;
-    }
-    
-    // 雪
-    if (code >= 20 && code <= 25) {
-        return icon_weather_snow;
-    }
-    
-    // 雾/霾/沙尘
-    if (code >= 26 && code <= 38) {
-        return icon_weather_fog;
-    }
-
-    return icon_weather_sunny; 
+    if (code == 1 || code == 3) return icon_weather_sunny_evening;  // 晚上
+    if (code == 0 || code == 2) return icon_weather_sunny;          // 白天
+    if (code >= 4 && code <= 9) return icon_weather_cloudy;         // 多云/阴
+    if (code >= 10 && code <= 19) return icon_weather_rain;         // 雨
+    if (code >= 20 && code <= 25) return icon_weather_snow;         // 雪
+    if (code >= 26 && code <= 38) return icon_weather_fog;          // 雾/霾/沙
+    return icon_fault;                                              // 故障
 }
 
-// 辅助函数：将天气代码转换为对应语言的字符串
 const char* WeatherApp::getWeatherText(int code) {
     int L = AppData.languageIndex; 
 
@@ -362,6 +483,22 @@ const char* WeatherApp::getWeatherText(int code) {
     }
 }
 
+const char* WeatherApp::getSlotName(int idx) {
+    if (slots[idx].isEmpty) return "";
+    int L = AppData.languageIndex; // 获取当前系统语言
+    // 1. 遍历预设列表，尝试匹配 code
+    for (const auto& preset : PRESETS) {
+        // 如果拼音对上了 (比如都是 "beijing")
+        if (strcmp(slots[idx].code, preset.code) == 0) {
+            // 返回预设列表里的名字 (这里面包含了双语动态切换)
+            return preset.names[L];
+        }
+    }
+    
+    // 2. 如果预设里没找到 (比如未来支持自定义城市)，就这就用槽位里存的老名字兜底
+    return slots[idx].name;
+}
+
 // --- 渲染逻辑 ---
 void WeatherApp::render() {
     display.clear();
@@ -407,7 +544,7 @@ void WeatherApp::renderMainView() {
     }
     
     // 城市名截断处理
-    strncpy(buf, slots[activeSlotIndex].name, 10);
+    strncpy(buf, getSlotName(activeSlotIndex), 10);
     buf[10] = '\0';
     display.drawText(x + 50, 11, buf);
     
@@ -426,30 +563,40 @@ void WeatherApp::renderMainView() {
     int startY = 17;
     int rowH = 16; 
 
+    int tildeX = x + 44;        // 波浪号中心
+    int weatherStartX = x + 68; // 天气文字起点
+
     for (int i = 0; i < 3; i++) {
         int rowBaseY = startY + (i * rowH);
         int textY = rowBaseY + 11;
         
-        // --- 数据准备 ---
-        const char* labelStr;
-        if (i == 0) labelStr = STR_TODAY[L];
-        else if (i == 1) labelStr = STR_TOMORROW[L];
-        else labelStr = STR_DAY_AFTER[L];
-        char tempStr[16];
-        snprintf(tempStr, sizeof(tempStr), "%d~%d", forecast.days[i].low, forecast.days[i].high);
-
+        const char* labelStr = (i==0)? STR_TODAY[L] : (i==1)? STR_TOMORROW[L] : STR_DAY_AFTER[L];
         const char* weatherStr = getWeatherText(forecast.days[i].code);
         const uint8_t* iconPtr = getWeatherIcon(forecast.days[i].code);
 
+        char lowStr[8], highStr[8];
+        snprintf(lowStr, sizeof(lowStr), "%d", forecast.days[i].low);
+        snprintf(highStr, sizeof(highStr), "%d", forecast.days[i].high);
+
         // --- 绘制 ---   
-        // Col 1: 时间 (Max 24px)
-        // 起点 x+2
+        // Col 1: 时间 (左对齐)
         display.drawText(x + 2, textY, labelStr);
-        // Col 2: 温度 (Max 36px)
-        display.drawText(x + 26, textY, tempStr);
-        // Col 3: 天气 (Max 48px)
-        display.drawText(x + 62, textY, weatherStr);
-        // Col 4: 图标 (Fixed 16px)
+
+        // Col 2: 温度 (以 x+48 为中心锚点)
+        int tildeW = display.getStrWidth("~"); // 约 6-8px
+        int lowW   = display.getStrWidth(lowStr);
+        
+        // 绘制低温
+        display.drawText(tildeX - lowW -1, textY, lowStr);
+        // 绘制 ~
+        display.drawText(tildeX, textY, "~");
+        // 绘制高温
+        display.drawText(tildeX + tildeW + 1, textY, highStr);
+
+        // Col 3: 天气文字 (固定左起点 x+70)
+        display.drawText(weatherStartX, textY, weatherStr);
+
+        // Col 4: 图标 (固定 x+112)
         display.setDrawColor(1);
         display.drawIcon(x + 112, rowBaseY - 1, 16, 16, iconPtr);
     }
@@ -485,10 +632,11 @@ void WeatherApp::renderSlotsView() {
         else display.setDrawColor(1);
 
         if (slots[i].isEmpty) {
-            display.drawText(baseX + 4, drawY, "Empty"); 
+            display.drawText(baseX + 4, drawY, STR_EMPTY_SLOT[L]); 
         } else {
-            if (i == activeSlotIndex) snprintf(buf, sizeof(buf), "* %s", slots[i].name);
-            else snprintf(buf, sizeof(buf), "  %s", slots[i].name);
+            const char* dynamicName = getSlotName(i);
+            if (i == activeSlotIndex) snprintf(buf, sizeof(buf), "* %s", dynamicName);
+            else snprintf(buf, sizeof(buf), "  %s", dynamicName);
             display.drawText(baseX + 4, drawY, buf);
         }
     }
@@ -510,10 +658,8 @@ void WeatherApp::renderSlotsView() {
         } 
         // 情况 B: 这是一个已有城市
         else {
-            // 先检查城市数量
-            int count = getCityCount();
-            
-            if (count <= 1) {
+            bool isLocked = (selectedIndex == activeSlotIndex);
+            if (isLocked) {
                 // 只有这一个独苗 -> 显示锁 (禁止删除) ---
                 // 画一个简单的锁头
                 display.drawFrame(baseX + rightCenter - 4, midY - 2, 8, 6); // 锁身
@@ -521,7 +667,6 @@ void WeatherApp::renderSlotsView() {
                 display.drawLine(baseX + rightCenter - 2, midY - 2, baseX + rightCenter - 2, midY - 5); // 锁梁左
                 display.drawLine(baseX + rightCenter + 2, midY - 2, baseX + rightCenter + 2, midY - 5); // 锁梁右
                 display.drawLine(baseX + rightCenter - 2, midY - 5, baseX + rightCenter + 2, midY - 5); // 锁梁顶
-                
                 display.drawText(baseX + splitX + 6, 56, "LOCK");
             } 
             else {
@@ -625,41 +770,4 @@ void WeatherApp::renderLibraryView() {
 
     display.setDrawColor(1);
     display.drawLine(baseX, 14, baseX+128, 14);
-}
-
-void WeatherApp::deleteCurrentSlot() {
-    // 清除数据
-    memset(&slots[selectedIndex], 0, sizeof(CitySlot));
-    slots[selectedIndex].isEmpty = true;
-    
-    // 智能交接逻辑
-    // 如果删除的正是当前主页显示的城市 (activeSlotIndex)
-    if (selectedIndex == activeSlotIndex) {
-        int newActive = -1;
-        // 遍历所有槽位，寻找第一个有数据的槽位做替补
-        for (int i = 0; i < 5; i++) {
-            if (!slots[i].isEmpty) {
-                newActive = i;
-                break; // 找到一个就停
-            }
-        }
-        // 更新活跃索引
-        activeSlotIndex = newActive;
-        // 如果找到了新城市，标记需要刷新天气
-        if (newActive != -1) {
-            pendingWeatherUpdate = true; 
-        }
-    }
-    // 保存
-    saveSlots();
-}
-
-int WeatherApp::getCityCount() {
-    int count = 0;
-    for (int i = 0; i < 5; i++) {
-        if (!slots[i].isEmpty) {
-            count++;
-        }
-    }
-    return count;
 }

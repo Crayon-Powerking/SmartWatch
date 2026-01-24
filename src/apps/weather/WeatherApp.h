@@ -74,6 +74,7 @@ private:
     void renderMainView();              // 画天气
     void renderSlotsView();             // 画槽位
     void renderLibraryView();           // 画预设库
+    const char* getSlotName(int idx);   // 获取槽位显示名称
 
     const char* getWeatherText(int code);       // 天气文字描述
     const uint8_t* getWeatherIcon(int code);    // 天气图标映射

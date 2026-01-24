@@ -25,7 +25,7 @@
 // 天气 API 设置
 #define WEATHER_KEY         "SvagmpHNnsfuweKoz"
 #define WEATHER_CITY        "hefei"
-#define WEATHER_CITY_index  10
+#define WEATHER_CITY_default  0
 
 // 1. 自动保存间隔 (毫秒)
 // 比如：5分钟 = 5 * 60 * 1000 = 300000

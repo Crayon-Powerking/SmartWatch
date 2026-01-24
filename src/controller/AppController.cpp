@@ -226,12 +226,13 @@ void AppController::checkWeather() {
 
 void AppController::weatherTask(void* parameter) {
     AppController* app = (AppController*)parameter;
-    WeatherResult res = app->network.fetchWeather(WEATHER_KEY, WEATHER_CITY);
+    WeatherResult res = app->network.fetchWeather(WEATHER_KEY, AppData.currentCityCode);
     if (res.success) {
         AppData.temperature = res.temperature;
         AppData.weatherCode = res.code;
         AppData.lastWeatherTime = time(NULL);
         app->timerWeather = millis(); 
+        app->storage.save();
     } else {
         app->timerWeather = millis() - 3600000 + 60000; 
     }
@@ -287,4 +288,11 @@ void AppController::render() {
 
     toast.draw(&display);
     display.update();
+}
+
+void AppController::forceWeatherUpdate() {
+    // 只有在联网且当前没有正在进行的天气任务时，才执行
+    if (network.isConnected() && weatherTaskHandle == NULL) {
+        checkWeather(); // 立即启动后台任务
+    }
 }
