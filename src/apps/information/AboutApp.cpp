@@ -40,14 +40,14 @@ void AboutApp::initInfo() {
     lines.clear();
     
     // --- 软件信息 ---
-    lines.push_back("== SOFTWARE ==");
+    lines.push_back("==== SOFTWARE ====");
     lines.push_back("SmartWatch OS");
     lines.push_back("Ver: v1.1.0");
     lines.push_back("By: Crayon");
     lines.push_back(""); 
 
     // --- 核心硬件 ---
-    lines.push_back("== CORE ==");
+    lines.push_back("====== CORE ======");
     lines.push_back("ESP32-WROOM");
     
     char buf[64];
@@ -63,22 +63,17 @@ void AboutApp::initInfo() {
     
     lines.push_back("");
 
-    // --- 传感器 (静态显示，还原为原先的样子) ---
-    // 这里不再去扫描 I2C，直接写死或者留空
-    lines.push_back("== SENSORS ==");
-    // lines.push_back("IMU: MPU-6050");  // 假设您装了这个
+    // --- 外设 ---  
+    lines.push_back("===== SENSORS ====");
     lines.push_back("Disp: SSD1306");
 
     lines.push_back("");
-    lines.push_back("== NETWORK ==");
+    lines.push_back("===== NETWORK ====");
     String mac = WiFi.macAddress();
     lines.push_back("MAC Address:");
     lines.push_back(mac); 
 
     lines.push_back("");
-    lines.push_back("--- END ---");
-    lines.push_back(""); 
-    lines.push_back(""); 
 
     totalContentHeight = lines.size() * lineHeight; 
 }
@@ -86,9 +81,6 @@ void AboutApp::initInfo() {
 int AboutApp::onLoop() {
     display.clear();
     
-    // ==================================================
-    // 缓动算法 (保留丝滑效果)
-    // ==================================================
     float diff = targetScrollY - currentScrollY;
     
     if (abs(diff) < 0.5) {
@@ -146,26 +138,26 @@ void AboutApp::draw() {
     }
 }
 
-// --- 辅助函数：限制滚动范围 ---
+// --- 按键回调 ---
 void AboutApp::onKeyUp() {
-    targetScrollY -= 40; 
+    targetScrollY -= 28; 
     if (targetScrollY < 0) targetScrollY = 0;
 }
 
 void AboutApp::onKeyDown() {
     int maxScroll = totalContentHeight - 64;
-    targetScrollY += 40;
+    targetScrollY += 28;
     if (targetScrollY > maxScroll) targetScrollY = maxScroll;
 }
 
 void AboutApp::onKeyHoldUp() {
-    targetScrollY -= 6; 
+    targetScrollY -= 1; 
     if (targetScrollY < 0) targetScrollY = 0;
 }
 
 void AboutApp::onKeyHoldDown() {
     int maxScroll = totalContentHeight - 64;
-    targetScrollY += 6;
+    targetScrollY += 1;
     if (targetScrollY > maxScroll) targetScrollY = maxScroll;
 }
 

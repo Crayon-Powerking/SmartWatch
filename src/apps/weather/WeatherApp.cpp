@@ -654,7 +654,7 @@ void WeatherApp::renderSlotsView() {
             // 画一个加号
             display.drawLine(baseX + rightCenter - 5, midY, baseX + rightCenter + 5, midY);
             display.drawLine(baseX + rightCenter, midY - 5, baseX + rightCenter, midY + 5);
-            display.drawText(baseX + splitX + 8, 55, "ADD");
+            display.drawText(baseX + splitX + 8, 57, STR_ADD[L]);
         } 
         // 情况 B: 这是一个已有城市
         else {
@@ -667,16 +667,16 @@ void WeatherApp::renderSlotsView() {
                 display.drawLine(baseX + rightCenter - 2, midY - 2, baseX + rightCenter - 2, midY - 5); // 锁梁左
                 display.drawLine(baseX + rightCenter + 2, midY - 2, baseX + rightCenter + 2, midY - 5); // 锁梁右
                 display.drawLine(baseX + rightCenter - 2, midY - 5, baseX + rightCenter + 2, midY - 5); // 锁梁顶
-                display.drawText(baseX + splitX + 6, 56, "LOCK");
+                display.drawText(baseX + splitX + 10, 57, STR_LOCK[L]);
             } 
             else {
                 // 可以删除 -> 显示进度条和提示
                 // 1. 文字提示 (HOLD / DEL)
                 // Y=38 左右显示文字
                 if (deleteProgress > 0) {
-                    display.drawText(baseX + splitX + 8, 38, "DEL");
+                    display.drawText(baseX + splitX + 8, 38, STR_DEL[L]);
                 } else {
-                    display.drawText(baseX + splitX + 6, 38, "HOLD");
+                    display.drawText(baseX + splitX + 6, 38, STR_HOLD[L]);
                 }
 
                 // 2. 进度条 (横向更稳妥，或者保持纵向但下移)
@@ -698,7 +698,7 @@ void WeatherApp::renderSlotsView() {
     }
     // 情况 C: 返回键
     else if (selectedIndex == -1) {
-        display.drawText(baseX + splitX + 6, 40, "EXIT");
+        display.drawText(baseX + splitX + 10, 40, STR_EXIT[L]);
     }
 
     // --- 3. 标题栏 (保持不变) ---
@@ -713,7 +713,7 @@ void WeatherApp::renderSlotsView() {
     } else {
         display.setDrawColor(1);
     }
-    display.drawText(backBtnX, 12, "< Back");
+    display.drawText(backBtnX, 12, STR_BACK[L]);
     display.setDrawColor(1); 
     display.drawLine(baseX, 14, baseX+128, 14);
 }
@@ -766,7 +766,7 @@ void WeatherApp::renderLibraryView() {
     } else {
         display.setDrawColor(1);
     }
-    display.drawText(backBtnX, 12, "< Back");
+    display.drawText(backBtnX, 12, STR_BACK[L]);
 
     display.setDrawColor(1);
     display.drawLine(baseX, 14, baseX+128, 14);

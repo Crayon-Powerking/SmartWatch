@@ -54,7 +54,7 @@ public:
         if (item.action) item.action();
     }
 
-    // [代码触发] 强制跳转到指定页面 (解决报错的核心函数)
+    // [代码触发] 强制跳转到指定页面
     void enter(MenuPage* subPage) {
         navigateTo(subPage);
     }

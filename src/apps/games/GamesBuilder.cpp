@@ -35,8 +35,6 @@ MenuPage* GamesBuilder::build(AppController* app) {
     page->add(STR_GAME_FLAPPY[lang],  [](){ Serial.println("Flappy"); });
     page->add(STR_GAME_PONG[lang],    [](){ Serial.println("Pong"); });
     page->add(STR_GAME_PACMAN[lang],  [](){ Serial.println("Pacman"); });
-    
-    // 有意思的彩蛋名字
     page->add(STR_GAME_MINECRAFT[lang], [](){ Serial.println("MC"); });
     page->add(STR_GAME_DOOM[lang],      [](){ Serial.println("Doom"); });
     page->add(STR_GAME_GENSHIN[lang],   [](){ Serial.println("Genshin"); });

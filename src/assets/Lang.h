@@ -20,18 +20,21 @@ static const char* STR_GAME[]       = {"Games",        "娱乐游戏"};
 static const char* STR_ABOUT[]      = {"About",        "关于本机"};
 static const char* STR_ALARM[]      = {"Alarm",        "闹钟提醒"};
 static const char* STR_CALENDAR[]   = {"Calendar",     "日历查看"};
-static const char* STR_exit[]       = {"Exit",         "菜单退出"};
+static const char* STR_Exit[]       = {"Exit",         "菜单退出"};
 
 // --- 设置菜单 ---
 static const char* STR_LANG_LABEL[] = {"Language",     "语言设置"}; 
 static const char* STR_LANG_VAL[]   = {"English",      "简体中文"}; 
-static const char* STR_REBOOT[]     = {"Reboot",       "重启设备"}; 
 
 // --- 天气 App 专用 ---
 static const char* STR_CITY_SELECT[]= {"City Slots",   "城市管理"};
 static const char* STR_ADD_CITY[]   = {"+ Add City",   "+ 添加城市"};
 static const char* STR_EMPTY_SLOT[] = {"[ Empty ]",    "[ 空槽位 ]"};
-static const char* STR_HOLD_DEL[]   = {"Hold to Del",  "长按删除"};
+static const char* STR_ADD[]        = {"ADD",          "添加"};
+static const char* STR_LOCK[]       = {"LOCK",         "锁定"};
+static const char* STR_HOLD[]       = {"HOLD",         "长按"};
+static const char* STR_DEL[]        = {"DEL",          "删除"};
+static const char* STR_EXIT[]       = {"EXIT",         "退出"};
 static const char* STR_TODAY[]      = {"TDY",          "今天"};
 static const char* STR_TOMORROW[]   = {"TMR",          "明天"};
 static const char* STR_DAY_AFTER[]  = {"DAT",          "后天"};
