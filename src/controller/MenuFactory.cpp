@@ -29,7 +29,7 @@ void MenuFactory::build(AppController* app) {
 
     // 天气应用
     app->rootMenu->add(STR_WEATHER[lang], icon_weather, [app](){ 
-        app->startApp(new WeatherApp(app));
+        app->startApp(new WeatherApp());
     });
 
     // 游戏应用
@@ -43,7 +43,7 @@ void MenuFactory::build(AppController* app) {
 
     // 关于应用
     app->rootMenu->add(STR_ABOUT[lang],    icon_information, [app](){
-        app->startApp(new AboutApp(app));
+        app->startApp(new AboutApp());
     });
 
     

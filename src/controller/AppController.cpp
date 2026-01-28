@@ -136,9 +136,7 @@ void AppController::quitApp() {
 }
 
 void AppController::tick() {
-    // --------------------------------------------------------
-    // 安全重载检查 (SettingsBuilder 触发)
-    // --------------------------------------------------------
+
     if (reloadPending) {
         reloadPending = false;
         destroyMenuTree();
@@ -152,20 +150,16 @@ void AppController::tick() {
 
     delay(1); 
 
-    // --------------------------------------------------------
-    // App 独立运行模式 (游戏)
-    // --------------------------------------------------------
     if (currentApp) {
         // 执行 App 循环，并检查返回值
         // 如果 App 返回非 0 (例如 1)，则代表请求退出
         int status = currentApp->onLoop();
-        
         if (status != 0) {
             quitApp();
         } else {
             network.tick(); // 保持网络心跳
         }
-        return; // 跳过后续的系统渲染
+        return;
     }
 
     // --- 以下是常规系统模式 (表盘/菜单) ---
@@ -261,7 +255,6 @@ void AppController::checkDayChange() {
 }
 
 void AppController::render() {
-    // 【防御】如果有 App 运行，系统不应该干扰显存
     if (currentApp) return;
 
     display.clear(); // 清屏

@@ -1,18 +1,16 @@
 #include "AboutApp.h"
+#include "controller/AppController.h"
 #include "assets/Lang.h"
 #include "esp_system.h" 
-// 移除了 <Wire.h>，不再进行 I2C 扫描
 
 extern InputHAL btnUp;
 extern InputHAL btnDown;
 extern InputHAL btnSelect;
 extern DisplayHAL display;
 
-AboutApp::AboutApp(AppController* sys) : app(sys) {}
-AboutApp::~AboutApp() {}
-
 void AboutApp::onRun(AppController* sys) {
-    this->app = sys;
+    this->sys = sys;
+    this->isExiting = false;
     
     // 重置滚动状态
     currentScrollY = 0.0f;
@@ -20,15 +18,14 @@ void AboutApp::onRun(AppController* sys) {
     
     initInfo();
 
-    // 1. 绑定单击
+    // 绑定按键单击事件
     btnUp.attachClick(std::bind(&AboutApp::onKeyUp, this));
     btnDown.attachClick(std::bind(&AboutApp::onKeyDown, this));
     btnSelect.attachClick(std::bind(&AboutApp::onKeySelect, this));
 
-    // 2. 绑定长按 (保留丝滑连续滑动)
+    // 绑定按键长按事件
     btnUp.attachDuringLongPress(std::bind(&AboutApp::onKeyHoldUp, this));
     btnDown.attachDuringLongPress(std::bind(&AboutApp::onKeyHoldDown, this));
-    
     btnSelect.attachLongPress(nullptr);
 }
 
@@ -79,10 +76,10 @@ void AboutApp::initInfo() {
 }
 
 int AboutApp::onLoop() {
+    if (this->isExiting) return 1;
+
     display.clear();
-    
     float diff = targetScrollY - currentScrollY;
-    
     if (abs(diff) < 0.5) {
         currentScrollY = targetScrollY;
     } else {
@@ -138,7 +135,7 @@ void AboutApp::draw() {
     }
 }
 
-// --- 按键回调 ---
+// 按键回调
 void AboutApp::onKeyUp() {
     targetScrollY -= 28; 
     if (targetScrollY < 0) targetScrollY = 0;
@@ -162,5 +159,5 @@ void AboutApp::onKeyHoldDown() {
 }
 
 void AboutApp::onKeySelect() {
-    app->quitApp();
+    this->isExiting = true;
 }

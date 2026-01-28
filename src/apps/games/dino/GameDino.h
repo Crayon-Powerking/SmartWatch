@@ -9,7 +9,7 @@
 
 struct Obstacle {
     float x;     // 用 float 实现平滑移动
-    int type;    // 【新增】0=小仙人掌, 1=大仙人掌
+    int type;    // 0=小仙人掌, 1=大仙人掌
     bool active;
 };
 

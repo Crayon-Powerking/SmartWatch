@@ -19,7 +19,7 @@ struct PresetCity {
 
 class WeatherApp : public AppBase {
 public:
-    WeatherApp(AppController* sys) : sys(sys) {}
+    WeatherApp() {}
     
     // --- AppBase 生命周期接口 ---
     void onRun(AppController* sys) override;
@@ -66,7 +66,7 @@ private:
     unsigned long ignoreClickUntil = 0; // 忽略点击直到某时间点
     unsigned long lastFrameTime = 0;    // 上一帧时间戳
 
-    // --- 内部逻辑函数 ---
+    // 内部功能函数
     void handleInput();                 // 按键处理
     void render();                      // 总渲染入口
     
