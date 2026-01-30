@@ -126,3 +126,79 @@ WeatherForecast NetworkService::fetchForecast(const char* key, const char* city)
     }
     return result;
 }
+
+HolidayInfo NetworkService::fetchNextHoliday() {
+    HolidayInfo result;
+    // 1. 初始化默认值 (防止乱码)
+    result.success = false;
+    strcpy(result.name, "Loading..."); // 默认名
+    strcpy(result.date, "----");
+    result.targetTs = 0;
+    result.fetchTime = 0;
+
+    if (!isConnected()) return result;
+
+    WiFiClient client;
+    HTTPClient http;
+
+    // 2. 请求 API
+    // 接口说明: http://timor.tech/api/holiday/next
+    // 参数 type=Y 表示返回带年份的日期 (例如 "2026-02-17")
+    String url = "http://timor.tech/api/holiday/next?type=Y"; 
+
+    if (http.begin(client, url)) {
+        // 设置 User-Agent 伪装成普通设备，防止被某些防火墙拦截
+        http.setUserAgent("ESP32-SmartWatch/1.0"); 
+        
+        int httpCode = http.GET();
+        if (httpCode == HTTP_CODE_OK) {
+            String payload = http.getString();
+            // 3. 解析 JSON
+            // 典型返回: {"code":0, "holiday":{"holiday":true, "name":"春节", "date":"2026-02-17", "rest":1}}
+            JsonDocument doc;
+            DeserializationError error = deserializeJson(doc, payload);
+
+            if (!error && doc["code"] == 0) {
+                const char* name = doc["holiday"]["name"];
+                const char* dateStr = doc["holiday"]["date"];
+                
+                if (name && dateStr) {
+                    // 复制数据到结构体
+                    strncpy(result.name, name, 31);
+                    result.name[31] = '\0'; // 确保封口
+                    
+                    strncpy(result.date, dateStr, 15);
+                    result.date[15] = '\0';
+                    
+                    // 4. 解析日期字符串 -> 时间戳
+                    struct tm tm = {0};
+                    int y, m, d;
+                    // sscanf 解析 "2026-02-17" 这种格式
+                    if (sscanf(dateStr, "%d-%d-%d", &y, &m, &d) == 3) {
+                        tm.tm_year = y - 1900; // tm_year 是从1900开始算的
+                        tm.tm_mon = m - 1;     // tm_mon 是 0-11
+                        tm.tm_mday = d;
+                        tm.tm_hour = 0; tm.tm_min = 0; tm.tm_sec = 0;
+                        
+                        result.targetTs = mktime(&tm); // 转换为 Unix 时间戳
+                    }
+                    
+                    result.success = true;
+                    result.fetchTime = time(NULL); // 记录下获取数据的时间
+                    
+                    Serial.printf("[Network] Next Holiday: %s (%s)\n", result.name, result.date);
+                }
+            } else {
+                Serial.print("[Network] Holiday JSON Error: ");
+                Serial.println(error.c_str());
+            }
+        } else {
+            Serial.printf("[Network] Holiday HTTP Error: %d\n", httpCode);
+        }
+        http.end();
+    } else {
+        Serial.println("[Network] Connect failed");
+    }
+    
+    return result;
+}

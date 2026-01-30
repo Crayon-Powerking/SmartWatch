@@ -1,21 +1,19 @@
 #include "GameDino.h"
 #include "assets/AppIcons.h" 
-#include "assets/Lang.h" // 【关键】引入全局字典
+#include "assets/Lang.h"
 
 extern InputHAL btnUp;
 extern InputHAL btnDown;
 extern InputHAL btnSelect;
 extern DisplayHAL display;
 
-GameDino::GameDino(AppController* sys) : app(sys) {}
-GameDino::~GameDino() {}
-
 // ==========================================
 // 1. 生命周期
 // ==========================================
 
 void GameDino::onRun(AppController* sys) {
-    this->app = sys;
+    this->sys = sys;
+    this->isExiting = false;
     this->highScore = AppData.dinoHighScore; 
     resetGame();
 
@@ -84,7 +82,7 @@ int GameDino::onLoop() {
 void GameDino::checkHighScore() {
     if (score > AppData.dinoHighScore) {
         AppData.dinoHighScore = score;
-        app->storage.save(); 
+        sys->storage.save(); 
     }
 }
 
@@ -120,7 +118,7 @@ void GameDino::onKeySelect() {
 
     if (state == STATE_PAUSED) {
         if (pauseMenuIndex == 0) state = STATE_PLAYING; 
-        else app->quitApp(); 
+        else sys->quitApp(); 
     } 
     else if (state == STATE_GAMEOVER) {
         resetGame(); 

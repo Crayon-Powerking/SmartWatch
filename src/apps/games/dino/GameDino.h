@@ -15,43 +15,45 @@ struct Obstacle {
 
 class GameDino : public AppBase {
 public:
-    GameDino(AppController* sys);
-    virtual ~GameDino();
+    GameDino() {}
+    virtual ~GameDino() {}
 
     void onRun(AppController* sys) override;
     int  onLoop() override;
     void onExit() override;
 
 private:
-    AppController* app;
+    AppController* sys = nullptr;
 
     enum GameState { STATE_PLAYING, STATE_PAUSED, STATE_GAMEOVER };
     GameState state;
-    int pauseMenuIndex; 
+
+    bool isExiting = false;  // 退出标志位
+    int pauseMenuIndex;      // 暂停菜单选项索引
 
     // --- 物理与数据 ---
-    int dinoY;
-    float dinoVy; 
-    bool isJumping;
+    int dinoY;               // 恐龙垂直位置
+    float dinoVy;            // 垂直速度
+    bool isJumping;          // 是否在跳跃中
     
-    unsigned long score;
+    unsigned long score;     // 当前分数
     unsigned long highScore; // 最高分
-    float speed;
-    float maxSpeed;
-    unsigned long frameCount;
+    float speed;             // 当前速度
+    float maxSpeed;          // 最高速度
+    unsigned long frameCount;// 帧计数器，用于计分
     
     
-    Obstacle obstacles[OBSTACLE_MAX];
+    Obstacle obstacles[OBSTACLE_MAX]; // 障碍物数组
 
     // --- 内部函数 ---
-    void resetGame();
-    void updatePhysics();
-    void updateObstacles();
+    void resetGame();      // 重置游戏状态
+    void updatePhysics();  // 更新物理状态
+    void updateObstacles();// 更新障碍物位置
     void checkHighScore(); // 保存最高分
     
-    void drawGame();
-    void drawPauseMenu();
-    void drawGameOver();
+    void drawGame();       // 绘制游戏画面
+    void drawPauseMenu();  // 绘制暂停菜单
+    void drawGameOver();   // 绘制游戏结束画面
 
     // 按键回调
     void onKeyUp();

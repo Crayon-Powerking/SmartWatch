@@ -4,7 +4,16 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
-#include "AppConfig.h"                                  // 包含心知天气的配置
+#include "AppConfig.h"
+
+// --- 节日信息 ---
+struct HolidayInfo {
+    bool success;           // 数据是否有效
+    char name[32];          // 节日名称
+    char date[16];          // 节日日期
+    long targetTs;          // 目标日期的 0点 时间戳 (用于计算倒计时)
+    time_t fetchTime;       // 上次获取数据的时间 (用于判断过期)
+};
 
 // --- 单日天气简报 ---
 struct DailyInfo {
@@ -36,10 +45,9 @@ public:
     bool isConnected();
     // 获取实况 (只给主表盘用)
     WeatherResult fetchWeather(const char* key, const char* city);      // 获取实况
-
     // 获取3天预报 (给 WeatherApp 用)
-    // 注意：这将调用心知天气的 /daily.json 接口
     WeatherForecast fetchForecast(const char* key, const char* city);   // 获取3天预报
+    HolidayInfo fetchNextHoliday();                                     // 获取下一个节日信息
     
 private:
     bool _connected = false;                                            // 当前 WiFi 连接状态

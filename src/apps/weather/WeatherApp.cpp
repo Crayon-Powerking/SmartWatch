@@ -29,6 +29,7 @@ const std::vector<PresetCity> WeatherApp::PRESETS = {
 void WeatherApp::onRun(AppController* sys) {
     // 初始化状态
     this->sys = sys;
+    this->isExiting = false;
     ignoreClickUntil = 0;
     lastFrameTime = millis();
     viewState = VIEW_MAIN;
@@ -153,7 +154,7 @@ void WeatherApp::onRun(AppController* sys) {
         } 
         else {
             saveSlots();
-            sys->quitApp(); 
+            this->isExiting = true; 
         }
     });
 }
@@ -163,6 +164,9 @@ void WeatherApp::onExit() {
 }
 
 int WeatherApp::onLoop() {
+    if (this->isExiting) return 1;
+
+    // 计算时间差
     unsigned long now = millis();                                
     float dt = (now - lastFrameTime) / 1000.0f;
     lastFrameTime = now;
@@ -299,7 +303,7 @@ void WeatherApp::handleInput() {
         case VIEW_MAIN:
             if (selectedIndex == 0) {
                 // 点击 "< Back" 退出
-                sys->quitApp();
+                this->isExiting = true;
             } else {
                 // 点击城市名，进入槽位管理
                 viewState = VIEW_SLOTS;

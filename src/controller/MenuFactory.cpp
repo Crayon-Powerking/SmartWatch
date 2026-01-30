@@ -6,6 +6,7 @@
 #include "apps/settings/SettingsBuilder.h" 
 #include "apps/information/AboutApp.h"
 #include "apps/weather/WeatherApp.h"
+#include "apps/calendar/CalendarApp.h"
 
 void MenuFactory::build(AppController* app) {
     app->destroyMenuTree();                                 // 先销毁旧菜单树
@@ -37,8 +38,15 @@ void MenuFactory::build(AppController* app) {
         app->menuCtrl.enter(gamePage);
     });
 
-    app->rootMenu->add(STR_CALENDAR[lang], icon_calendar, [](){});
+    // 日历应用
+    app->rootMenu->add(STR_CALENDAR[lang], icon_calendar, [app](){
+        app->startApp(new CalendarApp());
+    });
+
+    // 闹钟应用
     app->rootMenu->add(STR_ALARM[lang],    icon_alarm,    [](){});
+    
+    // 工具应用
     app->rootMenu->add(STR_TOOLS[lang],    icon_tool,     [](){});
 
     // 关于应用

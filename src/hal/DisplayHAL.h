@@ -32,7 +32,6 @@ public:
     void drawDisc(int x0, int y0, int rad);                             // 画实心圆
     void drawProgressArc(int x, int y, int radius, float progress);     // 画动态圆弧 (进度0.0~1.0)
     
-
 private:
     U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2;
 };

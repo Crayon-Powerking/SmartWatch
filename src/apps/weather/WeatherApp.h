@@ -35,8 +35,8 @@ private:
         VIEW_SLOTS,     // 1. 槽位管理页 (选择或删除)
         VIEW_LIBRARY    // 2. 预设库页 (从列表添加)
     };
-
     ViewState viewState = VIEW_MAIN;
+    bool isExiting = false;             // 退出标志位
 
     // --- 数据模型 ---
     CitySlot slots[5];                  // 5个固定槽位
@@ -46,11 +46,11 @@ private:
     bool isLoading = false;             // 是否正在联网
     bool pendingWeatherUpdate = false;  // 标记需要刷新天气
 
-    // --- 预设城市列表 (硬编码数据) ---
+    // --- 预设城市列表 ---
     static const std::vector<PresetCity> PRESETS;
 
+    // --- UI 动画变量  ---
     float selectionSmooth = 0.0f;
-    // --- UI 动画变量 (果冻效果核心) ---
     float scrollY = 0;                  // 当前渲染位置
     float targetY = 0;                  // 目标位置
     int   selectedIndex = 0;            // 当前选中的列表项索引

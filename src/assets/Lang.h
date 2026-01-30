@@ -26,6 +26,25 @@ static const char* STR_Exit[]       = {"Exit",         "菜单退出"};
 static const char* STR_LANG_LABEL[] = {"Language",     "语言设置"}; 
 static const char* STR_LANG_VAL[]   = {"English",      "简体中文"}; 
 
+// --- 日历 App ---
+static const char* STR_HOL_NEWYEAR[]   = {"New Year",        "元旦"};
+static const char* STR_HOL_SPRING[]    = {"Spring Festival", "春节"};
+static const char* STR_HOL_TOMB[]      = {"Tomb Sweeping",   "清明节"};
+static const char* STR_HOL_LABOR[]     = {"Labor Day",       "劳动节"};
+static const char* STR_HOL_GRAGON[]    = {"Dragon Boat",     "端午节"};
+static const char* STR_HOL_MIDAUTUMN[] = {"Mid-Autumn",      "中秋节"};
+static const char* STR_HOL_NATIONAL[]  = {"National Day",    "国庆节"};
+static const char* STR_UNTIL[]         = {"Until Days",      "距离"};
+
+//今日运势
+static const char* STR_CAL_HOLD[]      = {"Hold UP to Check", "按住上键求签"};
+static const char* STR_CAL_TODAY[]     = {"Today's Fortune:", "今日运势:"};
+static const char* STR_LUCK_0[]        = {"Great Luck",   "大吉大利"};
+static const char* STR_LUCK_1[]        = {"Good Luck",    "早晚不出事"};
+static const char* STR_LUCK_2[]        = {"Small Luck",   "小吉吉"};
+static const char* STR_LUCK_3[]        = {"No Bugs",      "代码无Bug"};
+static const char* STR_LUCK_4[]        = {"Don't Deploy", "忌上线"};
+
 // --- 天气 App 专用 ---
 static const char* STR_CITY_SELECT[]= {"City Slots",   "城市管理"};
 static const char* STR_ADD_CITY[]   = {"+ Add City",   "+ 添加城市"};
@@ -51,7 +70,7 @@ static const char* STR_Xian[]        = {"Xi'an",        "西安"};
 static const char* STR_Nanjing[]     = {"Nanjing",      "南京"};
 static const char* STR_Suzhou[]      = {"Suzhou",       "苏州"};
 
-// --- 天气状态映射 (英文使用缩写以适应屏幕) ---
+// 天气状态映射 (英文使用缩写以适应屏幕)
 // 0-3
 static const char* STR_W_SUNNY[]    = {"Sunny",        "晴"}; // 够短
 // 4-9
@@ -76,7 +95,7 @@ static const char* STR_W_SAND[]     = {"Sand",         "沙尘"};
 
 static const char* STR_W_UNKNOWN[]  = {"N/A",          "未知"};
 
-// --- 游戏名称 ---
+// --- 游戏App ---
 static const char* STR_GAME_DINO[]      = {"Dino Run",         "谷歌小恐龙"};
 static const char* STR_GAME_2048[]      = {"2048",             "2048数字版"};
 static const char* STR_GAME_TETRIS[]    = {"Tetris",           "俄罗斯方块"};
@@ -85,12 +104,12 @@ static const char* STR_GAME_INVADER[]   = {"Space Invaders",   "太空侵略者"
 static const char* STR_GAME_FLAPPY[]    = {"Flappy Bird",      "笨鸟先飞"};
 static const char* STR_GAME_PONG[]      = {"Pong",             "乒乓球"};
 static const char* STR_GAME_PACMAN[]    = {"Pac-Man",          "吃豆人"};
-static const char* STR_GAME_MINECRAFT[] = {"Minecraft",        "我的世界(假)"};
+static const char* STR_GAME_MINECRAFT[] = {"Minecraft",        "我的世界"};
 static const char* STR_GAME_DOOM[]      = {"Doom",             "毁灭战士"};
 static const char* STR_GAME_CYBER[]     = {"Cyberpunk 2077",   "赛博朋克2077"};
 static const char* STR_GAME_GENSHIN[]   = {"Genshin Impact",   "原神(启动!)"};
 
-// --- 游戏专用文本 ---
+//游戏专用文本
 static const char* STR_DINO_GAMEOVER[] = {"GAME OVER", "游戏结束"};
 static const char* STR_DINO_CONTINUE[] = {"Continue",  "继续游戏"};
 static const char* STR_DINO_QUIT[]     = {"Quit",      "退出游戏"};

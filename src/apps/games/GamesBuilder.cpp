@@ -1,6 +1,6 @@
 #include "GamesBuilder.h"
 #include "controller/AppController.h"
-#include "assets/Lang.h" // 引入字典
+#include "assets/Lang.h"
 
 #include "apps/games/dino/GameDino.h"
 
@@ -12,7 +12,7 @@ MenuPage* GamesBuilder::build(AppController* app) {
     
     // Dino Run
     page->add(STR_GAME_DINO[lang], nullptr, [app](){ 
-        app->startApp(new GameDino(app)); 
+        app->startApp(new GameDino()); 
     });
 
     // 2048
