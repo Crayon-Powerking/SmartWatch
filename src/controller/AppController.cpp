@@ -33,7 +33,7 @@ void AppController::bindSystemEvents() {
             if (!menuCtrl.back()) inMenuMode = false;
         } else {
             storage.save();
-            toast.show(STR_SAVED[AppData.languageIndex]);
+            toast.show(STR_SAVED[AppData.systemConfig.languageIndex]);
         }
     });
 
@@ -220,11 +220,11 @@ void AppController::checkWeather() {
 
 void AppController::weatherTask(void* parameter) {
     AppController* app = (AppController*)parameter;
-    WeatherResult res = app->network.fetchWeather(WEATHER_KEY, AppData.currentCityCode);
+    WeatherResult res = app->network.fetchWeather(WEATHER_KEY, AppData.runtimeCache.currentCityCode);
     if (res.success) {
-        AppData.temperature = res.temperature;
-        AppData.weatherCode = res.code;
-        AppData.lastWeatherTime = time(NULL);
+        AppData.runtimeCache.temperature = res.temperature;
+        AppData.runtimeCache.weatherCode = res.code;
+        AppData.runtimeCache.lastWeatherTime = time(NULL);
         app->timerWeather = millis(); 
         app->storage.save();
     } else {
@@ -241,15 +241,15 @@ void AppController::checkDayChange() {
 
     int currentDayCode = (timeinfo.tm_year + 1900) * 10000 + (timeinfo.tm_mon + 1) * 100 + timeinfo.tm_mday;
 
-    if (AppData.lastStepDayCode == 0) {
-        AppData.lastStepDayCode = currentDayCode;
+    if (AppData.runtimeCache.lastStepDay == 0) {
+        AppData.runtimeCache.lastStepDay = currentDayCode;
         storage.save();
         return;
     }
 
-    if (currentDayCode != AppData.lastStepDayCode) {        
-        AppData.stepCount = 0;
-        AppData.lastStepDayCode = currentDayCode;
+    if (currentDayCode != AppData.runtimeCache.lastStepDay) {        
+        AppData.runtimeCache.stepCount = 0;
+        AppData.runtimeCache.lastStepDay = currentDayCode;
         storage.save();
     }
 }

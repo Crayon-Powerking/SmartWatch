@@ -126,7 +126,7 @@ void CalendarApp::generateDailyFortune() {
 
 // 辅助函数：根据 API 返回的中文名，映射到本地的双语常量
 const char* getLocalizedHolidayName(const char* apiName) {
-    int L = AppData.languageIndex;
+    int L = AppData.systemConfig.languageIndex;
     
     // 字符串匹配
     if (strcmp(apiName, "元旦") == 0)   return STR_HOL_NEWYEAR[L];
@@ -151,7 +151,7 @@ void CalendarApp::render() {
 }
 
 void CalendarApp::renderHolidayInfo() {
-    int L = AppData.languageIndex;
+    int L = AppData.systemConfig.languageIndex;
     
     // 分割线
     display.drawLine(0, 32, 128, 32);
@@ -177,7 +177,7 @@ void CalendarApp::renderHolidayInfo() {
 }
 
 void CalendarApp::renderFortuneReveal() {
-    int L = AppData.languageIndex;
+    int L = AppData.systemConfig.languageIndex;
     int BaseY = 34; 
     
     if (cache.isRevealed) {

@@ -14,7 +14,7 @@ extern DisplayHAL display;
 void GameDino::onRun(AppController* sys) {
     this->sys = sys;
     this->isExiting = false;
-    this->highScore = AppData.dinoHighScore; 
+    this->highScore = AppData.gameRecords.dinoHighScore; 
     resetGame();
 
     btnUp.attachClick(std::bind(&GameDino::onKeyUp, this));
@@ -80,8 +80,8 @@ int GameDino::onLoop() {
 }
 
 void GameDino::checkHighScore() {
-    if (score > AppData.dinoHighScore) {
-        AppData.dinoHighScore = score;
+    if (score > AppData.gameRecords.dinoHighScore) {
+        AppData.gameRecords.dinoHighScore = score;
         sys->storage.save(); 
     }
 }
@@ -232,7 +232,7 @@ void GameDino::drawGame() {
 }
 
 void GameDino::drawPauseMenu() {
-    int lang = AppData.languageIndex;
+    int lang = AppData.systemConfig.languageIndex;
     
     // 弹窗菜单使用中文字体
     display.setFont(u8g2_font_wqy12_t_gb2312);
@@ -256,7 +256,7 @@ void GameDino::drawPauseMenu() {
 }
 
 void GameDino::drawGameOver() {
-    int lang = AppData.languageIndex;
+    int lang = AppData.systemConfig.languageIndex;
     display.setFont(u8g2_font_wqy12_t_gb2312);
 
     // 【使用 Lang.h 中的字符串】

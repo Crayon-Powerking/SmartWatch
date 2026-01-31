@@ -7,7 +7,7 @@
 static const int MAX_LANG_COUNT = 2;
 
 MenuPage* SettingsBuilder::build(AppController* app) {
-    int currentLang = AppData.languageIndex;
+    int currentLang = AppData.systemConfig.languageIndex;
     
     MenuPage* page = app->createPage(STR_SETTINGS[currentLang], LAYOUT_LIST);
     page->add(STR_BACK[currentLang], nullptr, [app](){
@@ -26,8 +26,8 @@ MenuPage* SettingsBuilder::build(AppController* app) {
             subPage->add(STR_LANG_VAL[i], nullptr, [app, i](){
                 
                 // 点击逻辑
-                if (AppData.languageIndex != i) {
-                    AppData.languageIndex = i; // 更改语言设置
+                if (AppData.systemConfig.languageIndex != i) {
+                    AppData.systemConfig.languageIndex = i; // 更改语言设置
                     app->storage.save();       // 保存到存储器
                     app->scheduleReload();     // 安排重载菜单
                 } else {

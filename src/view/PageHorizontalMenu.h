@@ -56,7 +56,7 @@ public:
             float xOffset = (i - visualIndex) * ITEM_SPACE;
             float drawX = 64.0f + xOffset;
 
-            // 【重点】这里不再传入固定的 Y 值，而是传入计算好的 drawX
+            // 这里不再传入固定的 Y 值，而是传入计算好的 drawX
             drawDynamicItem(display, i, drawX);
         }
 

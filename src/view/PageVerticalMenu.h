@@ -68,7 +68,8 @@ public:
         display->setDrawColor(1);
         int boxH = 14;
         int boxY = (int)(cursorY + (ITEM_H - boxH) / 2);
-        display->drawRBox(CURSOR_X, boxY, (int)currentW, boxH, CURSOR_R);
+        // display->drawRBox(CURSOR_X, boxY, (int)currentW, boxH, CURSOR_R);
+        display->drawFrame(CURSOR_X, boxY, (int)currentW, boxH);
 
         // 3. 绘制文字 (XOR 叠加层)
         // ------------------------------------------------

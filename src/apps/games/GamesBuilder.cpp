@@ -6,7 +6,7 @@
 
 MenuPage* GamesBuilder::build(AppController* app) {
     
-    int lang = AppData.languageIndex;
+    int lang = AppData.systemConfig.languageIndex;
     MenuPage* page = app->createPage(STR_GAME[lang], LAYOUT_LIST);
     page->add(STR_BACK[lang], nullptr, [app](){ app->menuCtrl.back(); });
     

@@ -10,7 +10,7 @@
 
 void MenuFactory::build(AppController* app) {
     app->destroyMenuTree();                                 // 先销毁旧菜单树
-    int lang = AppData.languageIndex;                       // 当前语言索引
+    int lang = AppData.systemConfig.languageIndex;                       // 当前语言索引
 
     MenuPage* gamePage = GamesBuilder::build(app);          // 游戏页 -> 交给 GamesBuilder
     MenuPage* settingsPage = SettingsBuilder::build(app);   // 设置页 -> 交给 SettingsBuilder

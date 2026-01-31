@@ -8,11 +8,8 @@
 class PageWatchFace : public Page {
 public:
     void draw(DisplayHAL* display) override {
-        // ==========================================
         // --------------- 顶部状态栏 ---------------
-        // ==========================================
         display->setFont(u8g2_font_6x10_tf);
-        
         // --- 日期 (左上角) ---
         display->drawText(2, 9, getDateString().c_str());
 
@@ -27,7 +24,7 @@ public:
         display->drawFrame(106, 0, 18, 10); // 电池框
         display->drawBox(124, 3, 2, 4);     // 电池头
         
-        // 计算电量条宽度 (最大14px)
+        // 计算电量条
         int width = (AppData.batteryLevel * 14) / 100;
         if (width > 14) width = 14; 
         if (width > 0) display->drawBox(108, 2, width, 6);
@@ -35,9 +32,7 @@ public:
         // 分割线
         display->drawLine(0, 12, 128, 12);
 
-        // ==========================================
         // --------------- 时间显示 ---------------
-        // ==========================================
         String timeStr = getTimeString();
         int sec = getSecond();
         char secStr[5];
@@ -50,62 +45,46 @@ public:
         display->setFont(u8g2_font_helvB24_tf); 
         display->drawText(TIME_X, TIME_Y, timeStr.c_str());
         
-        // 秒数 (小字体紧跟其后)
+        // 秒数
         int wMain = display->getStrWidth(timeStr.c_str());
         display->setFont(u8g2_font_helvB14_tf); 
         display->drawText(TIME_X + wMain + 2, TIME_Y, secStr);
 
-        // ==========================================
         // --------------- 底部状态栏 ---------------
-        // ==========================================
         int footerY = 64;               // 屏幕底部坐标
         int iconSize = 16;              // 图标大小 16x16
         int iconY = footerY - iconSize; // 图标 Y = 48
-        int textBaseY = footerY - 2;    // 文字基线 Y = 62 (留2px底边距)
+        int textBaseY = footerY - 2;    // 文字基线 Y = 62 
         
-        // 设置底部通用字体
         display->setFont(u8g2_font_ncenB08_tr); 
 
-        // ------------------------------------------------
-        // 左侧锚点：天气 (图标固定 X=0，文字向右生长)
-        // ------------------------------------------------
-        if (AppData.weatherCode == 99) {
-            // 绘制占位符
+        // 左侧天气信息
+        if (AppData.runtimeCache.weatherCode == 99) {
+            // 默认处理
             display->drawText(2, textBaseY, "--");
             display->drawIcon(0, iconY, iconSize, iconSize, icon_fault);
         } else {
-            // 1. 获取并绘制图标
-            const uint8_t* weatherIcon = getWeatherIcon(AppData.weatherCode);
+
+            const uint8_t* weatherIcon = getWeatherIcon(AppData.runtimeCache.weatherCode);
             display->drawIcon(0, iconY, iconSize, iconSize, weatherIcon);
 
-            // 2. 绘制温度 (从图标右边 18px 开始)
             char tempStr[16];
-            sprintf(tempStr, "%d C", AppData.temperature); 
+            sprintf(tempStr, "%d C", AppData.runtimeCache.temperature); 
             display->drawText(18, textBaseY, tempStr);
         }
 
-
-        // ------------------------------------------------
-        // 右侧锚点：步数 (图标固定 X=112，文字向左生长)
-        // ------------------------------------------------
-        // 1. 绘制脚印图标 (固定在最右侧 128-16 = 112)
+        // 右侧步数信息
         int stepIconX = 128 - iconSize; 
         display->drawIcon(stepIconX, iconY, iconSize, iconSize, icon_footprint);
-
-        // 2. 计算文字位置 (从图标左边倒推)
         char stepStr[16];
-        sprintf(stepStr, "%d", AppData.stepCount);
-        
+        sprintf(stepStr, "%d", AppData.runtimeCache.stepCount);
         int stepTextW = display->getStrWidth(stepStr);
-        // 文字起点 = 图标X(112) - 间距(2) - 文字宽
         int stepTextX = stepIconX - 2 - stepTextW;
-        
         display->drawText(stepTextX, textBaseY, stepStr);
     }
 
 private:
-    // --- [核心] 天气图标映射逻辑 ---
-    // 根据 AppIcons.h 中的资源进行匹配
+    // 天气代码匹配图标
     const uint8_t* getWeatherIcon(int code) {
         if (code == 1 || code == 3) return icon_weather_sunny_evening;  // 晚上
         if (code == 0 || code == 2) return icon_weather_sunny;          // 白天
@@ -116,7 +95,7 @@ private:
         return icon_fault;                                              // 故障/未知
     }
 
-    // --- 辅助：获取时间字符串 (HH:MM) ---
+    // 获取时间字符串
     String getTimeString() {
         struct tm timeinfo;
         if(!getLocalTime(&timeinfo, 0)) return "13:14";
@@ -125,7 +104,7 @@ private:
         return String(buf);
     }
 
-    // --- 辅助：获取日期字符串 (MM-DD Mon) ---
+    // 获取日期字符串 (MM-DD Mon)
     String getDateString() {
         struct tm timeinfo;
         if(!getLocalTime(&timeinfo, 0)) return "05-20 Mon";
@@ -134,7 +113,7 @@ private:
         return String(buf);
     }
 
-    // --- 辅助：获取秒数 ---
+    // 获取秒数
     int getSecond() {
         struct tm timeinfo;
         if(!getLocalTime(&timeinfo, 0)) return 0;

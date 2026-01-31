@@ -232,7 +232,7 @@ void WeatherApp::refreshWeather() {
         strcpy(this->forecast.cityCode, slots[activeSlotIndex].code);
         sys->storage.saveStruct("w_cache", this->forecast);
         sys->storage.putLong("w_cache_t", (long)time(NULL)); // 记录时间戳
-        strcpy(AppData.currentCityCode, slots[activeSlotIndex].code);
+        strcpy(AppData.runtimeCache.currentCityCode, slots[activeSlotIndex].code);
         sys->forceWeatherUpdate();
     }
     isLoading = false;
@@ -250,7 +250,7 @@ void WeatherApp::loadSlots() {
         }
     }
     if (!success || allEmpty) {
-        int L = AppData.languageIndex;
+        int L = AppData.systemConfig.languageIndex;
         if (WEATHER_CITY_default < (int)PRESETS.size()) {
             strncpy(slots[0].name, PRESETS[WEATHER_CITY_default].names[L], 15);
             slots[0].name[15] = '\0';
@@ -260,14 +260,14 @@ void WeatherApp::loadSlots() {
         }
         // 初始化完立刻保存
         saveSlots();
-        strcpy(AppData.currentCityCode, slots[0].code);
+        strcpy(AppData.runtimeCache.currentCityCode, slots[0].code);
     }
 
     activeSlotIndex = -1; 
-    if (strlen(AppData.currentCityCode) > 0) {
+    if (strlen(AppData.runtimeCache.currentCityCode) > 0) {
         for (int i=0; i<5; i++) {
             // 找到了匹配的城市
-            if (!slots[i].isEmpty && strcmp(slots[i].code, AppData.currentCityCode) == 0) {
+            if (!slots[i].isEmpty && strcmp(slots[i].code, AppData.runtimeCache.currentCityCode) == 0) {
                 activeSlotIndex = i;
                 break;
             }
@@ -278,7 +278,7 @@ void WeatherApp::loadSlots() {
         for (int i = 0; i < 5; i++) {
             if (!slots[i].isEmpty) {
                 activeSlotIndex = i;
-                strcpy(AppData.currentCityCode, slots[i].code);
+                strcpy(AppData.runtimeCache.currentCityCode, slots[i].code);
                 break;
             }
         }
@@ -289,7 +289,7 @@ void WeatherApp::loadSlots() {
 void WeatherApp::saveSlots() {
     // 更新全局当前城市代码
     if (activeSlotIndex >= 0 && !slots[activeSlotIndex].isEmpty) {
-        strcpy(AppData.currentCityCode, slots[activeSlotIndex].code);
+        strcpy(AppData.runtimeCache.currentCityCode, slots[activeSlotIndex].code);
     }
     // 保存槽位配置
     sys->storage.saveStruct("city_conf", slots);
@@ -298,7 +298,7 @@ void WeatherApp::saveSlots() {
 
 void WeatherApp::handleInput() {
     if (millis() < ignoreClickUntil) return;
-    int L = AppData.languageIndex;
+    int L = AppData.systemConfig.languageIndex;
     switch (viewState) {
         case VIEW_MAIN:
             if (selectedIndex == 0) {
@@ -332,7 +332,7 @@ void WeatherApp::handleInput() {
                 // 切换了主城市
                 if (activeSlotIndex != selectedIndex) {
                     activeSlotIndex = selectedIndex;
-                    strcpy(AppData.currentCityCode, slots[activeSlotIndex].code);
+                    strcpy(AppData.runtimeCache.currentCityCode, slots[activeSlotIndex].code);
                     pendingWeatherUpdate = true; // 城市变了，需要刷新
                 }
                 viewState = VIEW_MAIN;
@@ -420,7 +420,7 @@ const uint8_t* WeatherApp::getWeatherIcon(int code) {
 }
 
 const char* WeatherApp::getWeatherText(int code) {
-    int L = AppData.languageIndex; 
+    int L = AppData.systemConfig.languageIndex; 
 
     switch(code) {
         // --- 晴 ---
@@ -489,7 +489,7 @@ const char* WeatherApp::getWeatherText(int code) {
 
 const char* WeatherApp::getSlotName(int idx) {
     if (slots[idx].isEmpty) return "";
-    int L = AppData.languageIndex; // 获取当前系统语言
+    int L = AppData.systemConfig.languageIndex; // 获取当前系统语言
     // 1. 遍历预设列表，尝试匹配 code
     for (const auto& preset : PRESETS) {
         // 如果拼音对上了 (比如都是 "beijing")
@@ -522,7 +522,7 @@ void WeatherApp::render() {
 
 void WeatherApp::renderMainView() {
     int x = (int)slideX;
-    int L = AppData.languageIndex; 
+    int L = AppData.systemConfig.languageIndex; 
     char buf[32];
     
     // 确保字体背景透明，防止遮挡背景框
@@ -608,7 +608,7 @@ void WeatherApp::renderMainView() {
 
 void WeatherApp::renderSlotsView() {
     int baseX = (int)slideX + 128;
-    int L = AppData.languageIndex;
+    int L = AppData.systemConfig.languageIndex;
     char buf[64];
     
     // 布局参数
@@ -724,7 +724,7 @@ void WeatherApp::renderSlotsView() {
 
 void WeatherApp::renderLibraryView() {
     int baseX = (int)slideX + 256;
-    int L = AppData.languageIndex;
+    int L = AppData.systemConfig.languageIndex;
     int itemH = 16; 
     int listY = 28;
     int cursorBoxH = 13; 
