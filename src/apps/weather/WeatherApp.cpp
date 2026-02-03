@@ -4,12 +4,6 @@
 #include "controller/AppController.h"
 #include <cstdio>
 
-// 引用外部硬件对象
-extern DisplayHAL display;
-extern InputHAL btnUp;
-extern InputHAL btnDown;
-extern InputHAL btnSelect;
-
 // 预设城市列表
 const std::vector<PresetCity> WeatherApp::PRESETS = {
     {STR_Hefei,     "hefei"},
@@ -82,7 +76,7 @@ void WeatherApp::onRun(AppController* sys) {
 
     // --- 注册按键 ---
     // UP 单击
-    btnUp.attachClick([this](){
+    sys->btnUp.attachClick([this](){
         if (viewState == VIEW_MAIN) {
             // Main页只在 Back(0) 和 City(1) 之间切换
             if (selectedIndex > 0) selectedIndex--;
@@ -92,7 +86,7 @@ void WeatherApp::onRun(AppController* sys) {
     });
 
     // UP 连发
-    btnUp.attachDuringLongPress([this](){
+    sys->btnUp.attachDuringLongPress([this](){
         static unsigned long lastTrig = 0;
         // 每 150ms 触发一次
         if (millis() - lastTrig > 150) {
@@ -104,7 +98,7 @@ void WeatherApp::onRun(AppController* sys) {
     });
 
     // DOWN 单击
-    btnDown.attachClick([this](){
+    sys->btnDown.attachClick([this](){
         if (viewState == VIEW_MAIN) {
             if (selectedIndex < 1) selectedIndex++;
         } else if (viewState == VIEW_SLOTS) {
@@ -116,7 +110,7 @@ void WeatherApp::onRun(AppController* sys) {
     });
 
     // DOWN 连发
-    btnDown.attachDuringLongPress([this](){
+    sys->btnDown.attachDuringLongPress([this](){
         static unsigned long lastTrig = 0;
         if (millis() - lastTrig > 150) {
             if (viewState == VIEW_SLOTS) {
@@ -130,12 +124,12 @@ void WeatherApp::onRun(AppController* sys) {
     });
 
     // SELECT 单击
-    btnSelect.attachClick([this](){
+    sys->btnSelect.attachClick([this](){
         handleInput();
     });
 
     // SELECT 长按
-    btnSelect.attachLongPress([this, sys](){
+    sys->btnSelect.attachLongPress([this, sys](){
         if (!forecast.success && !isLoading && sys->network.isConnected()) {
             static unsigned long lastRetryTick = 0;
             if (millis() - lastRetryTick > 2000) {
@@ -187,7 +181,7 @@ int WeatherApp::onLoop() {
     if (viewState == VIEW_SLOTS && selectedIndex >= 0 && !slots[selectedIndex].isEmpty) {
         bool isLocked = (selectedIndex == activeSlotIndex);
         if (!isLocked) {
-            if (btnSelect.isPressed()) {
+            if (sys->btnSelect.isPressed()) {
                 deleteProgress += 0.7f * dt; 
                 if (deleteProgress > 1.0f) deleteProgress = 1.0f;
                 if (deleteProgress >= 1.0f) {
@@ -505,19 +499,19 @@ const char* WeatherApp::getSlotName(int idx) {
 
 // --- 渲染逻辑 ---
 void WeatherApp::render() {
-    display.clear();
+    sys->display.clear();
     
     int offsetX = (int)slideX;
     
     // 简单的视锥剔除优化
     if (offsetX > -128) renderMainView();
     if (offsetX < 0 && offsetX > -256) {
-        display.setDrawColor(1);
+        sys->display.setDrawColor(1);
         renderSlotsView();
     }
     if (offsetX < -128) renderLibraryView();
 
-    display.update();
+    sys->display.update();
 }
 
 void WeatherApp::renderMainView() {
@@ -526,41 +520,41 @@ void WeatherApp::renderMainView() {
     char buf[32];
     
     // 确保字体背景透明，防止遮挡背景框
-    display.setFontMode(1); 
+    sys->display.setFontMode(1); 
 
     // --- Header (0px - 14px) ---
     // 绘制 Back 按钮
     if (selectedIndex == 0 && viewState == VIEW_MAIN) {
         // 选中状态：白底黑字
-        display.setDrawColor(1);
-        display.drawBox(x, 0, 40, 14); // 画白底
-        display.setDrawColor(0);       // 设为黑笔
+        sys->display.setDrawColor(1);
+        sys->display.drawBox(x, 0, 40, 14); // 画白底
+        sys->display.setDrawColor(0);       // 设为黑笔
     } else {
         // 普通状态：黑底白字
-        display.setDrawColor(1);       // 设为白笔
+        sys->display.setDrawColor(1);       // 设为白笔
     }
-    display.drawText(x + 2, 11, STR_BACK[L]); 
+    sys->display.drawText(x + 2, 11, STR_BACK[L]); 
 
     // 绘制城市名
-    display.setDrawColor(1); // 恢复白笔
+    sys->display.setDrawColor(1); // 恢复白笔
     if (selectedIndex == 1 && viewState == VIEW_MAIN) {
-        display.drawFrame(x + 45, 0, 83, 14); // 选中时画个空心框
+        sys->display.drawFrame(x + 45, 0, 83, 14); // 选中时画个空心框
     }
     
     // 城市名截断处理
     strncpy(buf, getSlotName(activeSlotIndex), 10);
     buf[10] = '\0';
-    display.drawText(x + 50, 11, buf);
+    sys->display.drawText(x + 50, 11, buf);
     
     // 分割线
-    display.drawLine(x, 15, x + 128, 15);
+    sys->display.drawLine(x, 15, x + 128, 15);
 
     // --- Loading / Error 检查 ---
     if (isLoading) {
-        display.drawText(x + 40, 40, STR_LOADING[L]); return;
+        sys->display.drawText(x + 40, 40, STR_LOADING[L]); return;
     }
     if (!forecast.success) {
-        display.drawText(x + 10, 30, STR_NET_ERR[L]); return;
+        sys->display.drawText(x + 10, 30, STR_NET_ERR[L]); return;
     }
 
     // --- 列表内容 (3行等高) ---
@@ -584,25 +578,25 @@ void WeatherApp::renderMainView() {
 
         // --- 绘制 ---   
         // Col 1: 时间 (左对齐)
-        display.drawText(x + 2, textY, labelStr);
+        sys->display.drawText(x + 2, textY, labelStr);
 
         // Col 2: 温度 (以 x+48 为中心锚点)
-        int tildeW = display.getStrWidth("~"); // 约 6-8px
-        int lowW   = display.getStrWidth(lowStr);
+        int tildeW = sys->display.getStrWidth("~"); // 约 6-8px
+        int lowW   = sys->display.getStrWidth(lowStr);
         
         // 绘制低温
-        display.drawText(tildeX - lowW -1, textY, lowStr);
+        sys->display.drawText(tildeX - lowW -1, textY, lowStr);
         // 绘制 ~
-        display.drawText(tildeX, textY, "~");
+        sys->display.drawText(tildeX, textY, "~");
         // 绘制高温
-        display.drawText(tildeX + tildeW + 1, textY, highStr);
+        sys->display.drawText(tildeX + tildeW + 1, textY, highStr);
 
         // Col 3: 天气文字 (固定左起点 x+70)
-        display.drawText(weatherStartX, textY, weatherStr);
+        sys->display.drawText(weatherStartX, textY, weatherStr);
 
         // Col 4: 图标 (固定 x+112)
-        display.setDrawColor(1);
-        display.drawIcon(x + 112, rowBaseY - 1, 16, 16, iconPtr);
+        sys->display.setDrawColor(1);
+        sys->display.drawIcon(x + 112, rowBaseY - 1, 16, 16, iconPtr);
     }
 }
 
@@ -623,8 +617,8 @@ void WeatherApp::renderSlotsView() {
     if (selectedIndex >= 0) {
         int cursorDrawY = listY + (int)(selectionSmooth * 16) - (int)scrollY - cursorOff;
         if (cursorDrawY > 14 && cursorDrawY < 64) {
-            display.setDrawColor(1);
-            display.drawBox(baseX, cursorDrawY, listWidth, cursorH);
+            sys->display.setDrawColor(1);
+            sys->display.drawBox(baseX, cursorDrawY, listWidth, cursorH);
         }
     }
 
@@ -632,22 +626,22 @@ void WeatherApp::renderSlotsView() {
         int drawY = listY + (i * 16) - (int)scrollY;
         if (drawY > 70 || drawY < 10) continue;
 
-        if (i == selectedIndex && selectedIndex >= 0) display.setDrawColor(0);
-        else display.setDrawColor(1);
+        if (i == selectedIndex && selectedIndex >= 0) sys->display.setDrawColor(0);
+        else sys->display.setDrawColor(1);
 
         if (slots[i].isEmpty) {
-            display.drawText(baseX + 4, drawY, STR_EMPTY_SLOT[L]); 
+            sys->display.drawText(baseX + 4, drawY, STR_EMPTY_SLOT[L]); 
         } else {
             const char* dynamicName = getSlotName(i);
             if (i == activeSlotIndex) snprintf(buf, sizeof(buf), "* %s", dynamicName);
             else snprintf(buf, sizeof(buf), "  %s", dynamicName);
-            display.drawText(baseX + 4, drawY, buf);
+            sys->display.drawText(baseX + 4, drawY, buf);
         }
     }
 
     // --- 右侧区域绘制 ---
-    display.setDrawColor(1);
-    display.drawLine(baseX + splitX, 15, baseX + splitX, 64); // 分割线
+    sys->display.setDrawColor(1);
+    sys->display.drawLine(baseX + splitX, 15, baseX + splitX, 64); // 分割线
 
     // 只有在选中有效槽位时才画右侧内容
     if (selectedIndex >= 0 && selectedIndex < 5) {
@@ -656,9 +650,9 @@ void WeatherApp::renderSlotsView() {
         // 情况 A: 这是一个空槽位 -> 显示添加
         if (slots[selectedIndex].isEmpty) {
             // 画一个加号
-            display.drawLine(baseX + rightCenter - 5, midY, baseX + rightCenter + 5, midY);
-            display.drawLine(baseX + rightCenter, midY - 5, baseX + rightCenter, midY + 5);
-            display.drawText(baseX + splitX + 8, 57, STR_ADD[L]);
+            sys->display.drawLine(baseX + rightCenter - 5, midY, baseX + rightCenter + 5, midY);
+            sys->display.drawLine(baseX + rightCenter, midY - 5, baseX + rightCenter, midY + 5);
+            sys->display.drawText(baseX + splitX + 8, 57, STR_ADD[L]);
         } 
         // 情况 B: 这是一个已有城市
         else {
@@ -666,21 +660,21 @@ void WeatherApp::renderSlotsView() {
             if (isLocked) {
                 // 只有这一个独苗 -> 显示锁 (禁止删除) ---
                 // 画一个简单的锁头
-                display.drawFrame(baseX + rightCenter - 4, midY - 2, 8, 6); // 锁身
-                display.drawBox(baseX + rightCenter - 4, midY - 2, 8, 6);   // 实心锁身
-                display.drawLine(baseX + rightCenter - 2, midY - 2, baseX + rightCenter - 2, midY - 5); // 锁梁左
-                display.drawLine(baseX + rightCenter + 2, midY - 2, baseX + rightCenter + 2, midY - 5); // 锁梁右
-                display.drawLine(baseX + rightCenter - 2, midY - 5, baseX + rightCenter + 2, midY - 5); // 锁梁顶
-                display.drawText(baseX + splitX + 10, 57, STR_LOCK[L]);
+                sys->display.drawFrame(baseX + rightCenter - 4, midY - 2, 8, 6); // 锁身
+                sys->display.drawBox(baseX + rightCenter - 4, midY - 2, 8, 6);   // 实心锁身
+                sys->display.drawLine(baseX + rightCenter - 2, midY - 2, baseX + rightCenter - 2, midY - 5); // 锁梁左
+                sys->display.drawLine(baseX + rightCenter + 2, midY - 2, baseX + rightCenter + 2, midY - 5); // 锁梁右
+                sys->display.drawLine(baseX + rightCenter - 2, midY - 5, baseX + rightCenter + 2, midY - 5); // 锁梁顶
+                sys->display.drawText(baseX + splitX + 10, 57, STR_LOCK[L]);
             } 
             else {
                 // 可以删除 -> 显示进度条和提示
                 // 1. 文字提示 (HOLD / DEL)
                 // Y=38 左右显示文字
                 if (deleteProgress > 0) {
-                    display.drawText(baseX + splitX + 8, 38, STR_DEL[L]);
+                    sys->display.drawText(baseX + splitX + 8, 38, STR_DEL[L]);
                 } else {
-                    display.drawText(baseX + splitX + 6, 38, STR_HOLD[L]);
+                    sys->display.drawText(baseX + splitX + 6, 38, STR_HOLD[L]);
                 }
 
                 // 2. 进度条 (横向更稳妥，或者保持纵向但下移)
@@ -690,36 +684,36 @@ void WeatherApp::renderSlotsView() {
                 int barX = baseX + rightCenter - (barW/2);
                 int barY = 44; // 在文字下方
                 
-                display.drawFrame(barX, barY, barW, barH);
+                sys->display.drawFrame(barX, barY, barW, barH);
                 
                 if (deleteProgress > 0.01f) {
                     // 从下往上填
                     int fillH = (int)(deleteProgress * barH);
-                    display.drawBox(barX, barY + barH - fillH, barW, fillH);
+                    sys->display.drawBox(barX, barY + barH - fillH, barW, fillH);
                 }
             }
         }
     }
     // 情况 C: 返回键
     else if (selectedIndex == -1) {
-        display.drawText(baseX + splitX + 10, 40, STR_EXIT[L]);
+        sys->display.drawText(baseX + splitX + 10, 40, STR_EXIT[L]);
     }
 
     // --- 3. 标题栏 (保持不变) ---
-    display.setDrawColor(0); 
-    display.drawBox(baseX, 0, 128, 15); 
-    display.setDrawColor(1);
-    display.drawText(baseX + 2, 12, STR_CITY_SELECT[L]);
+    sys->display.setDrawColor(0); 
+    sys->display.drawBox(baseX, 0, 128, 15); 
+    sys->display.setDrawColor(1);
+    sys->display.drawText(baseX + 2, 12, STR_CITY_SELECT[L]);
     int backBtnX = baseX + 90;
     if (selectedIndex == -1) {
-        display.drawBox(backBtnX - 2, 0, 38, 14);
-        display.setDrawColor(0);
+        sys->display.drawBox(backBtnX - 2, 0, 38, 14);
+        sys->display.setDrawColor(0);
     } else {
-        display.setDrawColor(1);
+        sys->display.setDrawColor(1);
     }
-    display.drawText(backBtnX, 12, STR_BACK[L]);
-    display.setDrawColor(1); 
-    display.drawLine(baseX, 14, baseX+128, 14);
+    sys->display.drawText(backBtnX, 12, STR_BACK[L]);
+    sys->display.setDrawColor(1); 
+    sys->display.drawLine(baseX, 14, baseX+128, 14);
 }
 
 void WeatherApp::renderLibraryView() {
@@ -736,8 +730,8 @@ void WeatherApp::renderLibraryView() {
         int cursorDrawY = listY + (int)(selectionSmooth * 16) - (int)scrollY - cursorOff;
         // 仅当光标在可见区域时才绘制
         if (cursorDrawY > 14 && cursorDrawY < 64) {
-            display.setDrawColor(1);
-            display.drawBox(baseX, cursorDrawY, 100, cursorBoxH);
+            sys->display.setDrawColor(1);
+            sys->display.drawBox(baseX, cursorDrawY, 100, cursorBoxH);
         }
     }
     // 绘制列表项
@@ -748,30 +742,30 @@ void WeatherApp::renderLibraryView() {
 
         // 绘制文字
         if (i == selectedIndex && selectedIndex >= 0 && viewState == VIEW_LIBRARY) {
-            display.setDrawColor(0);
+            sys->display.setDrawColor(0);
         } else {
-            display.setDrawColor(1);
+            sys->display.setDrawColor(1);
         }
-        display.drawText(baseX + 4, drawY, PRESETS[i].names[L]);
+        sys->display.drawText(baseX + 4, drawY, PRESETS[i].names[L]);
     }
 
     // 标题栏背景
-    display.setDrawColor(0); 
-    display.drawBox(baseX, 0, 128, 15);
-    display.setDrawColor(1);
-    display.drawText(baseX + 2, 12, STR_ADD_CITY[L]); 
+    sys->display.setDrawColor(0); 
+    sys->display.drawBox(baseX, 0, 128, 15);
+    sys->display.setDrawColor(1);
+    sys->display.drawText(baseX + 2, 12, STR_ADD_CITY[L]); 
     
     // 右上角返回键
     int backBtnX = baseX + 90;
 
     if (selectedIndex == -1) {
-        display.drawBox(backBtnX - 2, 0, 40, 14);
-        display.setDrawColor(0);
+        sys->display.drawBox(backBtnX - 2, 0, 40, 14);
+        sys->display.setDrawColor(0);
     } else {
-        display.setDrawColor(1);
+        sys->display.setDrawColor(1);
     }
-    display.drawText(backBtnX, 12, STR_BACK[L]);
+    sys->display.drawText(backBtnX, 12, STR_BACK[L]);
 
-    display.setDrawColor(1);
-    display.drawLine(baseX, 14, baseX+128, 14);
+    sys->display.setDrawColor(1);
+    sys->display.drawLine(baseX, 14, baseX+128, 14);
 }

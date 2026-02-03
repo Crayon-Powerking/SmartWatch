@@ -3,12 +3,7 @@
 #include "assets/AppIcons.h"
 #include "assets/Lang.h"
 
-extern DisplayHAL display;
-extern InputHAL btnSelect;
-extern InputHAL btnUp;
-extern InputHAL btnDown;
-
-AppController::AppController() {}
+AppController::AppController() : btnSelect(PIN_BTN_SELECT), btnUp(PIN_BTN_UP),btnDown(PIN_BTN_DOWN) {}
 
 void AppController::wakeUp() {
     if (isSleeping) {
@@ -120,6 +115,11 @@ void AppController::begin() {
     // 1. 启动硬件和服务
     storage.begin();
     storage.load();
+    display.begin();
+    btnSelect.begin();
+    btnUp.begin();
+    btnDown.begin();
+    imu.begin();
     network.begin(WIFI_SSID, WIFI_PASS);
 
     // 2. 构建菜单树
@@ -190,6 +190,22 @@ void AppController::tick() {
 
     delay(1); 
 
+    btnSelect.tick();
+    btnUp.tick();
+    btnDown.tick();
+    
+    unsigned long now = millis();
+    static unsigned long lastImuTime = 0;
+    // 限制频率：每 100ms 读取一次传感器 (10Hz)
+    if (now - lastImuTime > 100) {
+        imu.update(); 
+        if (isSleeping && imu.isLiftWrist()) {
+            wakeUp();                 // 唤醒屏幕
+            lastActiveTime = millis();
+        }
+        lastImuTime = now;
+    }
+
     checkSleep();
     if (isSleeping) {
         delay(50); 
@@ -218,8 +234,7 @@ void AppController::tick() {
     }
     lastWifiState = AppData.isWifiConnected;
 
-    unsigned long now = millis();
-
+    now = millis();
     // 菜单动画
     static unsigned long lastAnimTick = 0;
     if (inMenuMode && (now - lastAnimTick > 10)) {

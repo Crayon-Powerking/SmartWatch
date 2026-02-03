@@ -6,6 +6,7 @@
 #include "model/AppBase.h"
 #include "hal/DisplayHAL.h"
 #include "hal/InputHAL.h"
+#include "hal/ImuHAL.h"
 #include "service/NetworkService.h"
 #include "service/StorageService.h"
 #include "view/PageWatchFace.h"
@@ -39,6 +40,12 @@ public:
     MenuController menuCtrl; 
     StorageService storage;
     NetworkService network;
+
+    DisplayHAL display;
+    InputHAL btnSelect;
+    InputHAL btnUp;
+    InputHAL btnDown;
+    ImuHAL imu;
 
 private:
     SystemToast toast;

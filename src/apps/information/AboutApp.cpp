@@ -3,11 +3,6 @@
 #include "assets/Lang.h"
 #include "esp_system.h" 
 
-extern InputHAL btnUp;
-extern InputHAL btnDown;
-extern InputHAL btnSelect;
-extern DisplayHAL display;
-
 void AboutApp::onRun(AppController* sys) {
     this->sys = sys;
     this->isExiting = false;
@@ -19,14 +14,14 @@ void AboutApp::onRun(AppController* sys) {
     initInfo();
 
     // 绑定按键单击事件
-    btnUp.attachClick(std::bind(&AboutApp::onKeyUp, this));
-    btnDown.attachClick(std::bind(&AboutApp::onKeyDown, this));
-    btnSelect.attachClick(std::bind(&AboutApp::onKeySelect, this));
+    sys->btnUp.attachClick(std::bind(&AboutApp::onKeyUp, this));
+    sys->btnDown.attachClick(std::bind(&AboutApp::onKeyDown, this));
+    sys->btnSelect.attachClick(std::bind(&AboutApp::onKeySelect, this));
 
     // 绑定按键长按事件
-    btnUp.attachDuringLongPress(std::bind(&AboutApp::onKeyHoldUp, this));
-    btnDown.attachDuringLongPress(std::bind(&AboutApp::onKeyHoldDown, this));
-    btnSelect.attachLongPress(nullptr);
+    sys->btnUp.attachDuringLongPress(std::bind(&AboutApp::onKeyHoldUp, this));
+    sys->btnDown.attachDuringLongPress(std::bind(&AboutApp::onKeyHoldDown, this));
+    sys->btnSelect.attachLongPress(nullptr);
 }
 
 void AboutApp::onExit() {
@@ -63,6 +58,7 @@ void AboutApp::initInfo() {
     // --- 外设 ---  
     lines.push_back("===== SENSORS ====");
     lines.push_back("Disp: SSD1306");
+    lines.push_back("Imu: MPU6050");
 
     lines.push_back("");
     lines.push_back("===== NETWORK ====");
@@ -78,7 +74,7 @@ void AboutApp::initInfo() {
 int AboutApp::onLoop() {
     if (this->isExiting) return 1;
 
-    display.clear();
+    sys->display.clear();
     float diff = targetScrollY - currentScrollY;
     if (abs(diff) < 0.5) {
         currentScrollY = targetScrollY;
@@ -87,13 +83,13 @@ int AboutApp::onLoop() {
     }
 
     draw();
-    display.update();
+    sys->display.update();
     return 0; 
 }
 
 void AboutApp::draw() {
-    display.setFont(u8g2_font_wqy12_t_gb2312); 
-    display.setDrawColor(1);
+    sys->display.setFont(u8g2_font_wqy12_t_gb2312); 
+    sys->display.setDrawColor(1);
 
     int screenH = 64;
     int drawY = (int)currentScrollY;
@@ -104,12 +100,12 @@ void AboutApp::draw() {
 
         if (y > -lineHeight && y < screenH + lineHeight) {
             if (lines[i].startsWith("=")) {
-                display.drawBox(0, y - 9, 120, 11); 
-                display.setDrawColor(0); 
-                display.drawText(2, y, lines[i].c_str());
-                display.setDrawColor(1); 
+                sys->display.drawBox(0, y - 9, 120, 11); 
+                sys->display.setDrawColor(0); 
+                sys->display.drawText(2, y, lines[i].c_str());
+                sys->display.setDrawColor(1); 
             } else {
-                display.drawText(2, y, lines[i].c_str());
+                sys->display.drawText(2, y, lines[i].c_str());
             }
         }
     }
@@ -130,8 +126,8 @@ void AboutApp::draw() {
              thumbY = (drawY * maxThumbY) / maxScroll;
         }
 
-        display.drawLine(barX + 1, 0, barX + 1, 64);
-        display.drawBox(barX, thumbY, barW, thumbH);
+        sys->display.drawLine(barX + 1, 0, barX + 1, 64);
+        sys->display.drawBox(barX, thumbY, barW, thumbH);
     }
 }
 

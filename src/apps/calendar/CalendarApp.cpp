@@ -3,11 +3,6 @@
 #include "assets/Lang.h"
 #include "assets/AppIcons.h"
 
-// 引用外部对象
-extern DisplayHAL display;
-extern InputHAL btnSelect;
-extern InputHAL btnUp;
-
 static const char** FORTUNE_LIST[] = {
     (const char**)STR_LUCK_0, // 大吉
     (const char**)STR_LUCK_1, // 中吉
@@ -27,11 +22,11 @@ void CalendarApp::onRun(AppController* sys) {
     loadCache();
     checkDayChange();
 
-    btnSelect.attachClick([this](){
+    sys->btnSelect.attachClick([this](){
         this->isExiting = true;
     });
     
-    btnUp.attachClick([](){}); 
+    sys->btnUp.attachClick([](){}); 
 }
 
 void CalendarApp::onExit() {
@@ -57,7 +52,7 @@ int CalendarApp::onLoop() {
 
     // --- 蓄力交互逻辑 ---
     if (!cache.isRevealed) {
-        if (btnUp.isPressed()) {
+        if (sys->btnUp.isPressed()) {
             holdProgress += 1.5f * dt; 
             if (holdProgress >= 1.0f) {
                 holdProgress = 1.0f;
@@ -139,27 +134,27 @@ const char* getLocalizedHolidayName(const char* apiName) {
 }
 
 void CalendarApp::render() {
-    display.clear();
-    display.setFontMode(1);
-    display.setDrawColor(1);
+    sys->display.clear();
+    sys->display.setFontMode(1);
+    sys->display.setDrawColor(1);
     
     renderHolidayInfo();
     renderFortuneReveal();
 
-    display.update();
+    sys->display.update();
 }
 
 void CalendarApp::renderHolidayInfo() {
     int L = AppData.systemConfig.languageIndex;
     
     // 分割线
-    display.drawLine(0, 32, 128, 32);
+    sys->display.drawLine(0, 32, 128, 32);
 
-    display.setFont(u8g2_font_wqy12_t_gb2312);
+    sys->display.setFont(u8g2_font_wqy12_t_gb2312);
     // 使用 Lang: "距离" / "Until Days"
-    display.drawText(2, 12, STR_UNTIL[L]); 
+    sys->display.drawText(2, 12, STR_UNTIL[L]); 
     // 显示节日名
-    display.drawText(2, 26, getLocalizedHolidayName(cache.holiday.name));
+    sys->display.drawText(2, 26, getLocalizedHolidayName(cache.holiday.name));
     
     // 计算天数
     time_t now = time(NULL);
@@ -170,9 +165,9 @@ void CalendarApp::renderHolidayInfo() {
     char buf[16];
     snprintf(buf, sizeof(buf), "%d", days);
     
-    display.setFont(u8g2_font_logisoso24_tn);
-    int w = display.getStrWidth(buf);
-    display.drawText(126 - w, 28, buf);
+    sys->display.setFont(u8g2_font_logisoso24_tn);
+    int w = sys->display.getStrWidth(buf);
+    sys->display.drawText(126 - w, 28, buf);
 }
 
 void CalendarApp::renderFortuneReveal() {
@@ -181,24 +176,24 @@ void CalendarApp::renderFortuneReveal() {
     
     if (cache.isRevealed) {
         // === 已揭晓 ===
-        display.setFont(u8g2_font_wqy12_t_gb2312);
+        sys->display.setFont(u8g2_font_wqy12_t_gb2312);
         // 使用 Lang: "Today's Fortune:" / "今日运势:"
-        display.drawText(2, BaseY + 12, STR_CAL_TODAY[L]); 
+        sys->display.drawText(2, BaseY + 12, STR_CAL_TODAY[L]); 
         
         // 获取对应的运势文字
         int idx = cache.fortuneIndex;
         if (idx < 0 || idx >= FORTUNE_COUNT) idx = 0; // 边界保护
         const char* luckText = FORTUNE_LIST[idx][L];
-        display.drawText(2, BaseY + 26, luckText);
+        sys->display.drawText(2, BaseY + 26, luckText);
         
     } else {
         // === 未揭晓 (蓄力界面) ===
-        display.setFont(u8g2_font_wqy12_t_gb2312);
+        sys->display.setFont(u8g2_font_wqy12_t_gb2312);
         
         // 居中计算
         const char* holdText = STR_CAL_HOLD[L];
-        int textW = display.getStrWidth(holdText);
-        display.drawText((128 - textW) / 2, BaseY + 14, holdText); 
+        int textW = sys->display.getStrWidth(holdText);
+        sys->display.drawText((128 - textW) / 2, BaseY + 14, holdText); 
         
         // 进度条框
         int barW = 100;
@@ -206,12 +201,12 @@ void CalendarApp::renderFortuneReveal() {
         int barX = (128 - barW) / 2;
         int barY = BaseY + 18;
         
-        display.drawFrame(barX, barY, barW, barH);
+        sys->display.drawFrame(barX, barY, barW, barH);
         
         // 填充进度
         if (holdProgress > 0) {
             int fillW = (int)(holdProgress * (barW - 2));
-            display.drawBox(barX + 1, barY + 1, fillW, barH - 2);
+            sys->display.drawBox(barX + 1, barY + 1, fillW, barH - 2);
         }
     }
 }

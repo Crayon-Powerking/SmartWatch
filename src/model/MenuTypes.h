@@ -31,8 +31,7 @@ struct MenuPage {
     MenuLayout layout;           // 布局类型
 
     // 构造函数增加默认值 (默认为列表，因为列表更常用)
-    MenuPage(String t, MenuLayout l = LAYOUT_LIST) 
-        : title(t), layout(l) {}
+    MenuPage(String t, MenuLayout l = LAYOUT_LIST) : title(t), layout(l) {}
     
     // 添加菜单项的函数
     void add(String title, const uint8_t* icon, MenuCallback cb) {

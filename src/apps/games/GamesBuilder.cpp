@@ -1,7 +1,6 @@
 #include "GamesBuilder.h"
 #include "controller/AppController.h"
 #include "assets/Lang.h"
-
 #include "apps/games/dino/GameDino.h"
 
 MenuPage* GamesBuilder::build(AppController* sys) {

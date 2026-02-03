@@ -2,11 +2,6 @@
 #include "assets/AppIcons.h" 
 #include "assets/Lang.h"
 
-extern InputHAL btnUp;
-extern InputHAL btnDown;
-extern InputHAL btnSelect;
-extern DisplayHAL display;
-
 // ==========================================
 // 1. 生命周期
 // ==========================================
@@ -17,13 +12,13 @@ void GameDino::onRun(AppController* sys) {
     this->highScore = AppData.gameRecords.dinoHighScore; 
     resetGame();
 
-    btnUp.attachClick(std::bind(&GameDino::onKeyUp, this));
-    btnDown.attachClick(std::bind(&GameDino::onKeyDown, this));
-    btnSelect.attachClick(std::bind(&GameDino::onKeySelect, this));
+    sys->btnUp.attachClick(std::bind(&GameDino::onKeyUp, this));
+    sys->btnDown.attachClick(std::bind(&GameDino::onKeyDown, this));
+    sys->btnSelect.attachClick(std::bind(&GameDino::onKeySelect, this));
     
-    btnSelect.attachLongPress(nullptr);
-    btnUp.attachDuringLongPress(nullptr);
-    btnDown.attachDuringLongPress(nullptr);
+    sys->btnSelect.attachLongPress(nullptr);
+    sys->btnUp.attachDuringLongPress(nullptr);
+    sys->btnDown.attachDuringLongPress(nullptr);
 }
 
 void GameDino::onExit() {
@@ -51,7 +46,7 @@ void GameDino::resetGame() {
 }
 
 int GameDino::onLoop() {
-    display.clear(); 
+    sys->display.clear(); 
 
     if (state == STATE_PLAYING) {
         updatePhysics();
@@ -75,7 +70,7 @@ int GameDino::onLoop() {
         drawGameOver();  
     }
 
-    display.update(); 
+    sys->display.update(); 
     return 0; 
 }
 
@@ -197,88 +192,88 @@ void GameDino::updateObstacles() {
 // ==========================================
 
 void GameDino::drawGame() {
-    display.setDrawColor(1);
-    display.drawLine(0, DINO_GROUND_Y, 128, DINO_GROUND_Y);
+    sys->display.setDrawColor(1);
+    sys->display.drawLine(0, DINO_GROUND_Y, 128, DINO_GROUND_Y);
 
     const unsigned char* dinoBmp = icon_dino_jump;
     if (!isJumping) {
         dinoBmp = ((frameCount / 8) % 2 == 0) ? icon_dino_run1 : icon_dino_run2;
     }
-    display.drawIcon(DINO_X, dinoY, DINO_W, DINO_H, dinoBmp);
+    sys->display.drawIcon(DINO_X, dinoY, DINO_W, DINO_H, dinoBmp);
 
     for(int i=0; i<OBSTACLE_MAX; i++) {
         if (obstacles[i].active) {
             if (obstacles[i].type == 0) {
-                display.drawIcon((int)obstacles[i].x, DINO_GROUND_Y - CACTUS_SMALL_H, CACTUS_SMALL_W, CACTUS_SMALL_H, icon_cactus_small);
+                sys->display.drawIcon((int)obstacles[i].x, DINO_GROUND_Y - CACTUS_SMALL_H, CACTUS_SMALL_W, CACTUS_SMALL_H, icon_cactus_small);
             } else {
-                display.drawIcon((int)obstacles[i].x, DINO_GROUND_Y - CACTUS_BIG_H, CACTUS_BIG_W, CACTUS_BIG_H, icon_cactus_big);
+                sys->display.drawIcon((int)obstacles[i].x, DINO_GROUND_Y - CACTUS_BIG_H, CACTUS_BIG_W, CACTUS_BIG_H, icon_cactus_big);
             }
         }
     }
 
     // --- HUD (抬头显示) ---
     // 使用小字体显示数字，不切换语言
-    display.setFont(u8g2_font_tom_thumb_4x6_t_all);
+    sys->display.setFont(u8g2_font_tom_thumb_4x6_t_all);
     
     char buf[32];
     
     // 显示最高分 "HI 12345" (左上角)
     sprintf(buf, "HI %ld", highScore); 
-    display.drawText(2, 6, buf); 
+    sys->display.drawText(2, 6, buf); 
 
     // 显示当前分 "00012" (右上角)
     sprintf(buf, "%05ld", score);
-    display.drawText(100, 6, buf); 
+    sys->display.drawText(100, 6, buf); 
 }
 
 void GameDino::drawPauseMenu() {
     int lang = AppData.systemConfig.languageIndex;
     
     // 弹窗菜单使用中文字体
-    display.setFont(u8g2_font_wqy12_t_gb2312);
+    sys->display.setFont(u8g2_font_wqy12_t_gb2312);
 
     int boxW = 86; 
     int boxH = 46; 
     int boxX = (128 - boxW) / 2;
     int boxY = (64 - boxH) / 2;
     
-    display.setDrawColor(0); display.drawRBox(boxX, boxY, boxW, boxH, 4);
-    display.setDrawColor(1); display.drawRBox(boxX, boxY, boxW, boxH, 4); 
-    display.setDrawColor(0); display.drawRBox(boxX+1, boxY+1, boxW-2, boxH-2, 4); 
-    display.setDrawColor(1); 
+    sys->display.setDrawColor(0); sys->display.drawRBox(boxX, boxY, boxW, boxH, 4);
+    sys->display.setDrawColor(1); sys->display.drawRBox(boxX, boxY, boxW, boxH, 4); 
+    sys->display.setDrawColor(0); sys->display.drawRBox(boxX+1, boxY+1, boxW-2, boxH-2, 4); 
+    sys->display.setDrawColor(1); 
 
     // 【使用 Lang.h 中的字符串】
-    if (pauseMenuIndex == 0) display.drawText(boxX + 10, boxY + 18, ">");
-    display.drawText(boxX + 20, boxY + 18, STR_DINO_CONTINUE[lang]);
+    if (pauseMenuIndex == 0) sys->display.drawText(boxX + 10, boxY + 18, ">");
+    sys->display.drawText(boxX + 20, boxY + 18, STR_DINO_CONTINUE[lang]);
 
-    if (pauseMenuIndex == 1) display.drawText(boxX + 10, boxY + 36, ">");
-    display.drawText(boxX + 20, boxY + 36, STR_DINO_QUIT[lang]);
+    if (pauseMenuIndex == 1) sys->display.drawText(boxX + 10, boxY + 36, ">");
+    sys->display.drawText(boxX + 20, boxY + 36, STR_DINO_QUIT[lang]);
 }
 
 void GameDino::drawGameOver() {
     int lang = AppData.systemConfig.languageIndex;
-    display.setFont(u8g2_font_wqy12_t_gb2312);
+    sys->display.setFont(u8g2_font_wqy12_t_gb2312);
 
     // 【使用 Lang.h 中的字符串】
     const char* title = STR_DINO_GAMEOVER[lang];
 
-    int textW = display.getStrWidth(title);
+    int textW = sys->display.getStrWidth(title);
     int boxW = textW + 24; 
     int boxH = 26;         
     int boxX = (128 - boxW) / 2;
     int boxY = (64 - boxH) / 2 - 4; 
     
-    display.setDrawColor(0); display.drawRBox(boxX, boxY, boxW, boxH, 4); 
-    display.setDrawColor(1); display.drawRBox(boxX, boxY, boxW, boxH, 4); 
-    display.setDrawColor(0); display.drawRBox(boxX+1, boxY+1, boxW-2, boxH-2, 4); 
+    sys->display.setDrawColor(0); sys->display.drawRBox(boxX, boxY, boxW, boxH, 4); 
+    sys->display.setDrawColor(1); sys->display.drawRBox(boxX, boxY, boxW, boxH, 4); 
+    sys->display.setDrawColor(0); sys->display.drawRBox(boxX+1, boxY+1, boxW-2, boxH-2, 4); 
     
-    display.setDrawColor(1);
-    display.drawText(boxX + 12, boxY + 18, title);
+    sys->display.setDrawColor(1);
+    sys->display.drawText(boxX + 12, boxY + 18, title);
 
     // 下方分数直接用英文 "Score:" 即可，简洁通用
     char buf[32];
     snprintf(buf, 32, "Score: %ld", score);
     
-    int scoreW = display.getStrWidth(buf);
-    display.drawText((128 - scoreW) / 2, boxY + boxH + 14, buf);
+    int scoreW = sys->display.getStrWidth(buf);
+    sys->display.drawText((128 - scoreW) / 2, boxY + boxH + 14, buf);
 }
