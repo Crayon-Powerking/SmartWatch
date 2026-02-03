@@ -21,6 +21,7 @@ public:
     void onRun(AppController* sys) override;
     int  onLoop() override;
     void onExit() override;
+    virtual bool isKeepAlive() override { return true; }
 
 private:
     AppController* sys = nullptr;

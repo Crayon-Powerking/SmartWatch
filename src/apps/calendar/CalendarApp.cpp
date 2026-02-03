@@ -63,7 +63,6 @@ int CalendarApp::onLoop() {
                 holdProgress = 1.0f;
                 cache.isRevealed = true;
                 saveCache(); 
-                // sys->vibrate(); // 如果有震动马达可以在这里调用
             }
         } else {
             holdProgress -= 3.0f * dt; 

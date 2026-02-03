@@ -3,9 +3,10 @@
 
 // 系统配置结构体
 struct SystemConfig {
-    int cursorStyle = 0;    // 光标样式
-    int colorinverse = 0;   // 颜色反转
-    int languageIndex = 0;  // 语言索引
+    bool colorinverse = false;  // 颜色反转
+    int cursorStyle = 0;        // 光标样式
+    int languageIndex = 0;      // 语言索引
+    int sleepTimeout = 15;      // 睡眠超时(秒)
 };
 
 // 游戏记录结构体

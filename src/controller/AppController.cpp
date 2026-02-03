@@ -10,10 +10,44 @@ extern InputHAL btnDown;
 
 AppController::AppController() {}
 
+void AppController::wakeUp() {
+    if (isSleeping) {
+        isSleeping = false;
+        display.setPowerSave(0);
+    }
+}
+
+void AppController::onButtonEvent() {
+    lastActiveTime = millis();
+    if (isSleeping) {
+        wakeUp();
+    }
+}
+
+void AppController::checkSleep() {
+    if (isSleeping) return;
+    // 如果当前在运行 App，则重置计时器并返回
+    if (currentApp && currentApp->isKeepAlive()) {
+        lastActiveTime = millis(); 
+        return;
+    }
+    // 如果设置为 "永不息屏"，直接返回
+    if (AppData.systemConfig.sleepTimeout == 0) return;
+
+    // 检查是否超时
+    unsigned long timeoutMs = AppData.systemConfig.sleepTimeout * 1000;
+    
+    if (millis() - lastActiveTime > timeoutMs) {
+        isSleeping = true;
+        display.setPowerSave(1);
+    }
+}
+
 // 绑定系统按键事件到菜单控制器
 void AppController::bindSystemEvents() {
     // [SELECT 单击]
     btnSelect.attachClick([this](){
+        this->onButtonEvent();
         if (currentApp) return; 
         if (!inMenuMode) {
             inMenuMode = true;
@@ -28,6 +62,7 @@ void AppController::bindSystemEvents() {
 
     // [SELECT 长按]
     btnSelect.attachLongPress([this](){
+        this->onButtonEvent();
         if (currentApp) return; 
         if (inMenuMode) {
             if (!menuCtrl.back()) inMenuMode = false;
@@ -39,6 +74,7 @@ void AppController::bindSystemEvents() {
 
     // [UP 单击]
     btnUp.attachClick([this](){
+        this->onButtonEvent();
         if (currentApp) return; 
         if (inMenuMode) menuCtrl.prev();
         else watchFace.onButton(EVENT_KEY_UP);
@@ -46,6 +82,7 @@ void AppController::bindSystemEvents() {
 
     // [UP 连发]
     btnUp.attachDuringLongPress([this](){
+        this->onButtonEvent();
         if (currentApp) return; 
         if (inMenuMode) {
             static unsigned long lastTrig = 0;
@@ -58,6 +95,7 @@ void AppController::bindSystemEvents() {
 
     // [DOWN 单击]
     btnDown.attachClick([this](){
+        this->onButtonEvent();
         if (currentApp) return; 
         if (inMenuMode) menuCtrl.next();
         else watchFace.onButton(EVENT_KEY_DOWN);
@@ -65,6 +103,7 @@ void AppController::bindSystemEvents() {
 
     // [DOWN 连发]
     btnDown.attachDuringLongPress([this](){
+        this->onButtonEvent();
         if (currentApp) return; 
         if (inMenuMode) {
             static unsigned long lastTrig = 0;
@@ -77,6 +116,7 @@ void AppController::bindSystemEvents() {
 }
 
 void AppController::begin() {
+    lastActiveTime = millis();
     // 1. 启动硬件和服务
     storage.begin();
     storage.load();
@@ -150,9 +190,14 @@ void AppController::tick() {
 
     delay(1); 
 
+    checkSleep();
+    if (isSleeping) {
+        delay(50); 
+        return; 
+    }
+
     if (currentApp) {
         // 执行 App 循环，并检查返回值
-        // 如果 App 返回非 0 (例如 1)，则代表请求退出
         int status = currentApp->onLoop();
         if (status != 0) {
             quitApp();

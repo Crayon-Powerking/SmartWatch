@@ -5,5 +5,5 @@ class AppController;
 
 class GamesBuilder {
 public:
-    static MenuPage* build(AppController* app);
+    static MenuPage* build(AppController* sys);
 };

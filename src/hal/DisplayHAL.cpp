@@ -51,6 +51,10 @@ void DisplayHAL::drawFrame(int x, int y, int width, int height) {
     u8g2.drawFrame(x, y, width, height);
 }
 
+void DisplayHAL::drawRFrame(int x, int y, int width, int height,int radius) {
+    u8g2.drawRFrame(x, y, width, height,radius);
+}
+
 void DisplayHAL::drawBox(int x, int y, int width, int height) {
     u8g2.drawBox(x, y, width, height);
 }
@@ -79,30 +83,34 @@ void DisplayHAL::drawDisc(int x0, int y0, int rad) {
     u8g2.drawDisc(x0, y0, rad, U8G2_DRAW_ALL);
 }
 
-// 核心实现：画动态圆弧
-// 原理：将圆分割成小线段，根据进度画出对应的线段
+void DisplayHAL::setInvert(bool invert){
+    if (invert) {
+        u8g2.sendF("c", 0xA7);
+    } else {
+        u8g2.sendF("c", 0xA6);
+    }
+}
+
+void DisplayHAL::setPowerSave(bool isEnable) {
+    u8g2.setPowerSave(isEnable ? 1 : 0);
+}
+
 void DisplayHAL::drawProgressArc(int x, int y, int radius, float progress) {
     if (progress <= 0.0f) return;
     if (progress > 1.0f) progress = 1.0f;
 
-    // 起始角度：-PI/2 是12点钟方向
     float startAngle = -M_PI / 2.0f; 
-    // 结束角度：一圈是 2*PI
     float endAngle = startAngle + (progress * 2.0f * M_PI);
-
-    // 步进角度：为了画圆滑，每10度或15度画一根线
-    // 步进越小越圆滑，但计算量越大。0.2弧度(约11度)对OLED足够了
     float step = 0.2f; 
 
     float currentAngle = startAngle;
-    
-    // 计算起点的坐标
+
     int prevX = x + (int)(cos(currentAngle) * radius);
     int prevY = y + (int)(sin(currentAngle) * radius);
 
     while (currentAngle < endAngle) {
         currentAngle += step;
-        if (currentAngle > endAngle) currentAngle = endAngle; // 修正最后一步
+        if (currentAngle > endAngle) currentAngle = endAngle;
 
         int currX = x + (int)(cos(currentAngle) * radius);
         int currY = y + (int)(sin(currentAngle) * radius);

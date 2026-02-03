@@ -4,22 +4,18 @@
 
 #include "apps/games/dino/GameDino.h"
 
-MenuPage* GamesBuilder::build(AppController* app) {
+MenuPage* GamesBuilder::build(AppController* sys) {
     
     int lang = AppData.systemConfig.languageIndex;
-    MenuPage* page = app->createPage(STR_GAME[lang], LAYOUT_LIST);
-    page->add(STR_BACK[lang], nullptr, [app](){ app->menuCtrl.back(); });
+    MenuPage* page = sys->createPage(STR_GAME[lang], LAYOUT_LIST);
+    page->add(STR_BACK[lang], nullptr, [sys](){ sys->menuCtrl.back(); });
     
     // Dino Run
-    page->add(STR_GAME_DINO[lang], nullptr, [app](){ 
-        app->startApp(new GameDino()); 
+    page->add(STR_GAME_DINO[lang], nullptr, [sys](){ 
+        sys->startApp(new GameDino()); 
     });
 
-    // 2048
-    page->add(STR_GAME_2048[lang], [](){ 
-        Serial.println("Start 2048"); 
-    });
-    
+    page->add(STR_GAME_2048[lang], [](){ Serial.println("Start 2048"); }); 
     page->add(STR_GAME_TETRIS[lang],  [](){ Serial.println("Tetris"); });
     page->add(STR_GAME_SNAKE[lang],   [](){ Serial.println("Snake"); });
     page->add(STR_GAME_INVADER[lang], [](){ Serial.println("Invaders"); });

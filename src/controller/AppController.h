@@ -33,6 +33,7 @@ public:
     void startApp(AppBase* app);                     // 启动一个 App
     void quitApp();                                  // 退出当前 App
     void scheduleReload() { reloadPending = true; }  // 安排重载菜单树
+    void onButtonEvent();                            // 喂狗
 
     // 公开成员，方便 App 访问硬件 (或者通过 friend)
     MenuController menuCtrl; 
@@ -48,6 +49,12 @@ private:
     void checkWeather();                // 检查并更新天气数据     
     void render();                      // 渲染当前画面   
     void checkDayChange();              // 检查是否跨天，重置步数  
+
+    // --- 睡眠管理 ---
+    void checkSleep();                  // 检查是否该睡觉了
+    void wakeUp();                      // 唤醒屏幕
+    unsigned long lastActiveTime = 0;   // 上次操作时间
+    bool isSleeping = false;            // 当前是否黑屏
     
     // --- 视图渲染器 ---
     PageWatchFace      watchFace;       // 表盘页面

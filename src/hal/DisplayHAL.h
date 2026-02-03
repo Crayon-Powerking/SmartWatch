@@ -24,6 +24,7 @@ public:
     void drawIcon(int x, int y, int w, int h, const uint8_t* bitmap);   // 画图标 (XBM 位图)
     void drawGlyph(int x, int y, uint16_t encoding);                    // 画单个字符
     void drawFrame(int x, int y, int width, int height);                // 画空心矩形
+    void drawRFrame(int x, int y, int width, int height,int radius);     // 画圆角空心矩形
     void drawBox(int x, int y, int width, int height);                  // 画实心矩形
     void drawRBox(int x, int y, int width, int height, int radius);     // 画圆角矩形
     void drawLine(int x1, int y1, int x2, int y2);                      // 画直线
@@ -31,6 +32,8 @@ public:
     void drawCircle(int x0, int y0, int rad);                           // 画空心圆
     void drawDisc(int x0, int y0, int rad);                             // 画实心圆
     void drawProgressArc(int x, int y, int radius, float progress);     // 画动态圆弧 (进度0.0~1.0)
+    void setInvert(bool invert);                                        // 设置反色显示
+    void setPowerSave(bool isEnable);                                   // 设置息屏模式
     
 private:
     U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2;

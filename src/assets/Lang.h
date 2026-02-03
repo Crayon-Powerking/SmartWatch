@@ -25,6 +25,15 @@ static const char* STR_Exit[]       = {"Exit",         "菜单退出"};
 // --- 设置菜单 ---
 static const char* STR_LANG_LABEL[] = {"Language",     "语言设置"}; 
 static const char* STR_LANG_VAL[]   = {"English",      "简体中文"}; 
+static const char* STR_CURSOR[]     = {"Cursor",       "光标设置"}; 
+static const char* STR_SOLID[]      = {"Solid",        "实心矩形"};
+static const char* STR_HOLLOW[]     = {"Hollow",       "空心矩形"};
+static const char* STR_INVERSE[]    = {"Inverse",      "反色设置"};
+static const char* STR_SLEEP_VAL[]  = {"Sleep Time",   "息屏时间"};
+static const char* STR_SLEEP[2][5]  = {
+    {"No Sleep", "15s", "30s", "1min", "5min"},
+    {"永不息屏", "15秒", "30秒", "1分钟", "5分钟"}
+};
 
 // --- 日历 App ---
 static const char* STR_HOL_NEWYEAR[]   = {"New Year",        "元旦"};

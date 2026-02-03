@@ -1,6 +1,7 @@
 #pragma once
 #include "Page.h"
 #include "model/MenuTypes.h"
+#include "model/AppData.h"
 #include <Arduino.h>
 
 // --- 布局配置 ---
@@ -68,13 +69,23 @@ public:
         display->setDrawColor(1);
         int boxH = 14;
         int boxY = (int)(cursorY + (ITEM_H - boxH) / 2);
-        // display->drawRBox(CURSOR_X, boxY, (int)currentW, boxH, CURSOR_R);
-        display->drawFrame(CURSOR_X, boxY, (int)currentW, boxH);
 
+        // 根据配置选择光标样式
+        switch(AppData.systemConfig.cursorStyle) {
+            case 0: // 实心矩形
+                display->drawRBox(CURSOR_X, boxY, (int)currentW, boxH, CURSOR_R);
+                break;
+            case 1: // 空心矩形
+            default:
+                display->drawRFrame(CURSOR_X, boxY, (int)currentW, boxH,CURSOR_R);
+                break;
+        }
         // 3. 绘制文字 (XOR 叠加层)
         // ------------------------------------------------
         display->setDrawColor(2); // 开启异或模式 (黑底变白，白底变黑)
         display->setFontMode(1);  // 透明背景
+
+        display->setInvert(AppData.systemConfig.colorinverse); // 颜色反转设置
 
         int startRow = (int)(cameraY / ITEM_H);
         int endRow = startRow + VISIBLE_ROWS + 1;
