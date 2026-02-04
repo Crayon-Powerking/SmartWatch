@@ -1,6 +1,5 @@
 #include "SettingsBuilder.h"
 #include "controller/AppController.h"
-#include "assets/appIcons.h"
 #include "assets/Lang.h"
 
 static const int MAX_LANG_COUNT = 2;

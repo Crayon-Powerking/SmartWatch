@@ -34,6 +34,7 @@ public:
     void drawProgressArc(int x, int y, int radius, float progress);     // 画动态圆弧 (进度0.0~1.0)
     void setInvert(bool invert);                                        // 设置反色显示
     void setPowerSave(bool isEnable);                                   // 设置息屏模式
+    void setAlwaysOn(bool isEnable);                                    // 设置常亮模式
     
 private:
     U8G2_SSD1306_128X64_NONAME_F_4W_HW_SPI u8g2;

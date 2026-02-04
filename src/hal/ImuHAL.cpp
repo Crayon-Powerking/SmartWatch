@@ -1,4 +1,5 @@
 #include "hal/ImuHAL.h"
+#include "model/AppData.h"
 #include <math.h>
 
 ImuHAL::ImuHAL() {
@@ -30,6 +31,7 @@ void ImuHAL::update() {
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
     
+    detectStep(a.acceleration.x, a.acceleration.y, a.acceleration.z);
     // 互补滤波处理加速度数据
     data.ax = data.ax * filterAlpha + a.acceleration.x * (1 - filterAlpha);
     data.ay = data.ay * filterAlpha + a.acceleration.y * (1 - filterAlpha);
@@ -50,7 +52,33 @@ void ImuHAL::update() {
     data.roll = atan2(data.ay, data.az) * 57.29578;
 }
 
-// 抬手亮屏算法
+void ImuHAL::detectStep(float ax, float ay, float az) {
+    // 1. 计算合加速度向量长度 (Magnitude)
+    // 公式: m = sqrt(x^2 + y^2 + z^2)
+    float magnitude = sqrt(ax * ax + ay * ay + az * az);
+
+    // 2. 简单的峰值检测
+    // 正常静止时 magnitude 约为 9.8 (1G 重力)
+    // 走路时会有冲击，瞬间值会超过 11.0 ~ 13.0
+    if (magnitude > STEP_THRESHOLD) {
+        unsigned long now = millis();
+        // 3. 时间防抖: 人类走路最快约为 2-3 步/秒，所以间隔需 > 300ms
+        if (now - lastStepTime > STEP_DELAY_MS) {
+            newStepDetected = true;
+            lastStepTime = now;
+        }
+    }
+}
+
+bool ImuHAL::checkStep() {
+    if (newStepDetected) {
+        newStepDetected = false; 
+        return true;
+    }
+    return false;
+}
+
+// 抬手亮屏
 bool ImuHAL::isLiftWrist() {
     bool isLooking = (data.az > 4.0 && data.ay > 1.5);
     return isLooking;

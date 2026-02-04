@@ -95,6 +95,14 @@ void DisplayHAL::setPowerSave(bool isEnable) {
     u8g2.setPowerSave(isEnable ? 1 : 0);
 }
 
+void DisplayHAL::setAlwaysOn(bool isEnable) {
+    if (isEnable) {
+        u8g2.sendF("c", 0xA5);
+    } else {
+        u8g2.sendF("c", 0xA4);
+    }
+}
+
 void DisplayHAL::drawProgressArc(int x, int y, int radius, float progress) {
     if (progress <= 0.0f) return;
     if (progress > 1.0f) progress = 1.0f;

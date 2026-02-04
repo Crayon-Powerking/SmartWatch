@@ -21,9 +21,16 @@ public:
     void update();    
     ImuData getData() { return data; }
     bool isLiftWrist();
+    bool checkStep();
 
 private:
     Adafruit_MPU6050 mpu;
     ImuData data;
     const float filterAlpha = 0.8f;  // 互补滤波系数
+
+    void detectStep(float ax, float ay, float az); // 内部算法函数
+    bool newStepDetected = false;     // 是否有新步数标志
+    unsigned long lastStepTime = 0;   // 上一步的时间戳
+    const float STEP_THRESHOLD = 11.5f; // 阈值 (重力是9.8, 超过11.5认为有震动)
+    const int STEP_DELAY_MS = 350;    // 防抖时间 (两步之间至少间隔350ms)
 };

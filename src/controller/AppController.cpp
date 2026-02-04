@@ -23,7 +23,6 @@ void AppController::checkSleep() {
     if (isSleeping) return;
     // 如果当前在运行 App，则重置计时器并返回
     if (currentApp && currentApp->isKeepAlive()) {
-        lastActiveTime = millis(); 
         return;
     }
     // 如果设置为 "永不息屏"，直接返回
@@ -42,9 +41,11 @@ void AppController::checkSleep() {
 void AppController::bindSystemEvents() {
     // [SELECT 单击]
     btnSelect.attachClick([this](){
+        bool wasSleeping = isSleeping;
         this->onButtonEvent();
+        if(wasSleeping) return;
         if (currentApp) return; 
-        if (!inMenuMode) {
+        if (!inMenuMode && !isSleeping) {
             inMenuMode = true;
             if (rootMenu && !rootMenu->items.empty()) {
                 rootMenu->selectedIndex = rootMenu->items.size() / 2;
@@ -57,7 +58,9 @@ void AppController::bindSystemEvents() {
 
     // [SELECT 长按]
     btnSelect.attachLongPress([this](){
+        bool wasSleeping = isSleeping;
         this->onButtonEvent();
+        if(wasSleeping) return;
         if (currentApp) return; 
         if (inMenuMode) {
             if (!menuCtrl.back()) inMenuMode = false;
@@ -169,8 +172,12 @@ void AppController::quitApp() {
 
     // 3. 恢复界面
     inMenuMode = true; 
-    menuCtrl.init(rootMenu);
-    
+
+    if (menuCtrl.getCurrentPage() == nullptr) {
+        menuCtrl.init(rootMenu);
+    }
+    lastActiveTime = millis();
+
     display.clear();
     display.update();
 }
@@ -196,9 +203,12 @@ void AppController::tick() {
     
     unsigned long now = millis();
     static unsigned long lastImuTime = 0;
-    // 限制频率：每 100ms 读取一次传感器 (10Hz)
-    if (now - lastImuTime > 100) {
+
+    if (now - lastImuTime > 30) {
         imu.update(); 
+        if(imu.checkStep()) {
+            AppData.runtimeCache.stepCount++;
+        }
         if (isSleeping && imu.isLiftWrist()) {
             wakeUp();                 // 唤醒屏幕
             lastActiveTime = millis();
@@ -245,7 +255,7 @@ void AppController::tick() {
     // 智能天气
     if (network.isConnected()) {
         if (now - wifiConnectTime > 2000) { 
-            if (timerWeather == 0 || (now - timerWeather > 3600000)) {
+            if (timerWeather == 0 || (now - timerWeather > CONFIG_WEATHER_INTERVAL)) {
                 checkWeather();
             }
         }
@@ -255,7 +265,7 @@ void AppController::tick() {
     checkDayChange();
     
     // 自动保存
-    if (now - timerSave > 1800000) {
+    if (now - timerSave > CONFIG_AUTO_SAVE_INTERVAL) {
         storage.save();
         timerSave = now;
     }

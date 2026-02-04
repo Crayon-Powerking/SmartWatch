@@ -9,7 +9,7 @@ MenuPage* GamesBuilder::build(AppController* sys) {
     MenuPage* page = sys->createPage(STR_GAME[lang], LAYOUT_LIST);
     page->add(STR_BACK[lang], nullptr, [sys](){ sys->menuCtrl.back(); });
     
-    // Dino Run
+    // 小恐龙
     page->add(STR_GAME_DINO[lang], nullptr, [sys](){ 
         sys->startApp(new GameDino()); 
     });
@@ -23,8 +23,8 @@ MenuPage* GamesBuilder::build(AppController* sys) {
     page->add(STR_GAME_PACMAN[lang],  [](){ Serial.println("Pacman"); });
     page->add(STR_GAME_MINECRAFT[lang], [](){ Serial.println("MC"); });
     page->add(STR_GAME_DOOM[lang],      [](){ Serial.println("Doom"); });
-    page->add(STR_GAME_GENSHIN[lang],   [](){ Serial.println("Genshin"); });
     page->add(STR_GAME_CYBER[lang], [](){ Serial.println("Wake up Samurai"); });
+    page->add(STR_GAME_GENSHIN[lang],   [](){ Serial.println("原神nb"); });
 
     return page;
 }

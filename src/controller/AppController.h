@@ -18,11 +18,13 @@
 class MenuFactory;
 class SettingsBuilder;
 class GamesBuilder;
+class ToolBuilder;
 
 class AppController {
     
     friend class MenuFactory;
     friend class SettingsBuilder;
+    friend class ToolBuilder;
     friend class GamesBuilder;
     friend class AppBase; 
 
@@ -47,6 +49,9 @@ public:
     InputHAL btnDown;
     ImuHAL imu;
 
+    unsigned long getLastActiveTime() const { 
+        return lastActiveTime; 
+    }
 private:
     SystemToast toast;
 
@@ -60,8 +65,8 @@ private:
     // --- 睡眠管理 ---
     void checkSleep();                  // 检查是否该睡觉了
     void wakeUp();                      // 唤醒屏幕
-    unsigned long lastActiveTime = 0;   // 上次操作时间
     bool isSleeping = false;            // 当前是否黑屏
+    unsigned long lastActiveTime = 0;   // 上次操作时间
     
     // --- 视图渲染器 ---
     PageWatchFace      watchFace;       // 表盘页面
