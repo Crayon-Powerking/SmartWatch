@@ -2,6 +2,7 @@
 #include "controller/AppController.h"
 #include "assets/Lang.h"
 #include "apps/tool/flashlight/Flashlight.h"
+#include "apps/tool/gyroscope/Gyroscope.h"
 
 MenuPage* ToolBuilder::build(AppController* sys){
     int L = AppData.systemConfig.languageIndex;
@@ -12,5 +13,8 @@ MenuPage* ToolBuilder::build(AppController* sys){
         sys->startApp(new Flashlight());
     });
 
+    page->add(STR_TOOL_IMU[L], nullptr, [sys]{
+        sys->startApp(new Gyroscope());
+    });
     return page;
 };

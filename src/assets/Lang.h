@@ -37,7 +37,7 @@ static const char* STR_SLEEP[2][5]  = {
 
 //工具菜单
 static const char* STR_TOOL_FLASH[]  = {"Flashlight",   "手电筒"};
-static const char* STR_TOOL_IMU[]    = {"IMU Data",     "陀螺仪数据"};
+static const char* STR_TOOL_IMU[]    = {"IMU Data",     "陀螺仪"};
 
 // --- 日历 App ---
 static const char* STR_HOL_NEWYEAR[]   = {"New Year",        "元旦"};

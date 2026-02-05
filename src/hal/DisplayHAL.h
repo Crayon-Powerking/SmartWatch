@@ -31,6 +31,7 @@ public:
     void setDrawColor(uint8_t color);                                   // 设置绘图颜色 (0=黑, 1=白, 2=反色)
     void drawCircle(int x0, int y0, int rad);                           // 画空心圆
     void drawDisc(int x0, int y0, int rad);                             // 画实心圆
+    void drawPixel(int x, int y);                                       // 画单个像素
     void drawProgressArc(int x, int y, int radius, float progress);     // 画动态圆弧 (进度0.0~1.0)
     void setInvert(bool invert);                                        // 设置反色显示
     void setPowerSave(bool isEnable);                                   // 设置息屏模式

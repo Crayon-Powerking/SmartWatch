@@ -83,6 +83,10 @@ void DisplayHAL::drawDisc(int x0, int y0, int rad) {
     u8g2.drawDisc(x0, y0, rad, U8G2_DRAW_ALL);
 }
 
+void DisplayHAL::drawPixel(int x, int y) {
+    u8g2.drawPixel(x, y);
+}
+
 void DisplayHAL::setInvert(bool invert){
     if (invert) {
         u8g2.sendF("c", 0xA7);
