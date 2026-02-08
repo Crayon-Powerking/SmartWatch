@@ -9,6 +9,13 @@ struct SystemConfig {
     int sleepTimeout = 15;      // 睡眠超时(秒)
 };
 
+// 网络相关配置
+// struct NetworkConfig{
+//     char wifiSSID[32] = "";     // WiFi SSID
+//     char wifiPassword[32] = ""; // WiFi 密码
+//     char WEATHER_KEY[64] = "";     // 天气 API Key
+// };
+
 // 游戏记录结构体
 struct GameRecords {
     long dinoHighScore = 0; // 恐龙高分

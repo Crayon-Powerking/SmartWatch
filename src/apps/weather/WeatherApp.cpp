@@ -76,7 +76,8 @@ void WeatherApp::onRun(AppController* sys) {
 
     // --- 注册按键 ---
     // UP 单击
-    sys->btnUp.attachClick([this](){
+    sys->btnUp.attachClick([this, sys](){
+        sys->onButtonEvent();
         if (viewState == VIEW_MAIN) {
             // Main页只在 Back(0) 和 City(1) 之间切换
             if (selectedIndex > 0) selectedIndex--;
@@ -86,7 +87,8 @@ void WeatherApp::onRun(AppController* sys) {
     });
 
     // UP 连发
-    sys->btnUp.attachDuringLongPress([this](){
+    sys->btnUp.attachDuringLongPress([this, sys](){
+        sys->onButtonEvent();
         static unsigned long lastTrig = 0;
         // 每 150ms 触发一次
         if (millis() - lastTrig > 150) {
@@ -98,7 +100,8 @@ void WeatherApp::onRun(AppController* sys) {
     });
 
     // DOWN 单击
-    sys->btnDown.attachClick([this](){
+    sys->btnDown.attachClick([this, sys](){
+        sys->onButtonEvent();
         if (viewState == VIEW_MAIN) {
             if (selectedIndex < 1) selectedIndex++;
         } else if (viewState == VIEW_SLOTS) {
@@ -110,7 +113,8 @@ void WeatherApp::onRun(AppController* sys) {
     });
 
     // DOWN 连发
-    sys->btnDown.attachDuringLongPress([this](){
+    sys->btnDown.attachDuringLongPress([this, sys](){
+        sys->onButtonEvent();
         static unsigned long lastTrig = 0;
         if (millis() - lastTrig > 150) {
             if (viewState == VIEW_SLOTS) {
@@ -124,12 +128,14 @@ void WeatherApp::onRun(AppController* sys) {
     });
 
     // SELECT 单击
-    sys->btnSelect.attachClick([this](){
+    sys->btnSelect.attachClick([this, sys](){
+        sys->onButtonEvent();
         handleInput();
     });
 
     // SELECT 长按
     sys->btnSelect.attachLongPress([this, sys](){
+        sys->onButtonEvent();
         if (!forecast.success && !isLoading && sys->network.isConnected()) {
             static unsigned long lastRetryTick = 0;
             if (millis() - lastRetryTick > 2000) {

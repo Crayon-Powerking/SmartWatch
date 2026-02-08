@@ -17,9 +17,6 @@
 #define PIN_BTN_DOWN  14  // D14 -> 减少
 
 // --- 用户配置 (User Configuration) ---
-// WiFi 设置
-// #define WIFI_SSID     "8513"
-// #define WIFI_PASS     "ai123456"
 #define WIFI_SSID     "User"
 #define WIFI_PASS     "Crayon666"
 // 天气 API 设置

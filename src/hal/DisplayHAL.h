@@ -3,6 +3,13 @@
 #include "AppConfig.h"
 #include <cmath>
 
+#define ORIGIN  0     // 起始坐标
+#define MAX_X   128   // 最大横坐标
+#define MAX_Y   64    // 最大纵坐标
+#define LINE_Y  16    // 行高
+#define WORD_Y  14    // 字高
+#define GAP     2     // 间隙
+
 class DisplayHAL {
 public:
     DisplayHAL();                                                      // 构造函数

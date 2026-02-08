@@ -8,6 +8,7 @@
 #include "apps/weather/WeatherApp.h"
 #include "apps/calendar/CalendarApp.h"
 #include "apps/tool/ToolBuilder.h"
+#include "apps/alarm/AlarmApp.h"
 
 void MenuFactory::build(AppController* sys) {
     sys->destroyMenuTree();                                 // 先销毁旧菜单树
@@ -46,7 +47,9 @@ void MenuFactory::build(AppController* sys) {
     });
 
     // 闹钟应用
-    sys->rootMenu->add(STR_ALARM[lang],    icon_alarm,    [](){});
+    sys->rootMenu->add(STR_ALARM[lang], icon_alarm, [sys](){
+        sys->startApp(new AlarmApp());
+    });
     
     // 工具应用
     sys->rootMenu->add(STR_TOOLS[lang],    icon_tool,     [sys, toolsPage](){

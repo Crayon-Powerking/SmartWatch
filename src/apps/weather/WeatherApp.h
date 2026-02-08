@@ -17,6 +17,12 @@ struct PresetCity {
     const char* code;
 };
 
+enum ViewState {
+        VIEW_MAIN,      // 0. 天气详情页 (显示3天预报)
+        VIEW_SLOTS,     // 1. 槽位管理页 (选择或删除)
+        VIEW_LIBRARY    // 2. 预设库页 (从列表添加)
+    };
+
 class WeatherApp : public AppBase {
 public:
     WeatherApp() {}
@@ -25,16 +31,11 @@ public:
     void onRun(AppController* sys) override;
     int  onLoop() override;
     void onExit() override;
+    virtual bool isKeepAlive() override { return false; }
 
 private:
     AppController* sys;
-
-    // --- 状态定义 ---
-    enum ViewState {
-        VIEW_MAIN,      // 0. 天气详情页 (显示3天预报)
-        VIEW_SLOTS,     // 1. 槽位管理页 (选择或删除)
-        VIEW_LIBRARY    // 2. 预设库页 (从列表添加)
-    };
+    
     ViewState viewState = VIEW_MAIN;
     bool isExiting = false;             // 退出标志位
 
