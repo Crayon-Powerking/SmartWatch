@@ -150,6 +150,7 @@ void GameDino::onRun(AppController* sys) {
     this->isExiting = false;
     this->highScore = AppData.gameRecords.dinoHighScore;
 
+    setFrameRate(60);
     resetGame();
 
     // 使用 Lambda 表达式绑定按键，并调用 processInput 防止屏幕休眠

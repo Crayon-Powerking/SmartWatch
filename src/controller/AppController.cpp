@@ -266,8 +266,13 @@ void AppController::tick() {
     }
 
     // -- 5. 渲染管线 (30FPS) ------------------------------------------------------
+    int targetFps = 30; // 默认系统帧率
+    if (currentApp) {
+        targetFps = currentApp->getFrameRate();
+    }
+    unsigned long frameInterval = 1000 / targetFps;
     static unsigned long lastRender = 0;
-    if (now - lastRender > 33) { 
+    if (now - lastRender > frameInterval) { 
         lastRender = now;
         
         if (!currentApp) render(); // 无App时绘制系统界面
