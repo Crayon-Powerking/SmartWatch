@@ -1,4 +1,5 @@
 #include "AppData.h"
 
-// 真正分配内存空间
-AppDataModel AppData;       
+// -- 内存分配 --------------------------------------------------------------------
+// 在程序启动时分配全局唯一的 AppData 实例
+AppDataModel AppData;

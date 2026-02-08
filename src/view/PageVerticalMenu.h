@@ -1,24 +1,21 @@
 #pragma once
+
 #include "Page.h"
 #include "model/MenuTypes.h"
 #include "model/AppData.h"
 #include <Arduino.h>
 
-// --- 布局配置 ---
-#define ITEM_H         16    // 行高
-#define VISIBLE_ROWS   4     // 可见行数
-#define PADDING_X      6     // 文字左右边距
-#define CURSOR_R       3     // 光标圆角
-#define CURSOR_X       4     // 光标起始X
+// -- 布局配置 --------------------------------------------------------------------
+#define VISIBLE_ROWS   4
+#define PADDING_X      6
+#define CURSOR_R       3
+#define CURSOR_X       4
+#define SCROLL_BAR_W   6
+#define CONTENT_W      (128 - SCROLL_BAR_W - 2)
+#define MAX_TEXT_W     (CONTENT_W - CURSOR_X - PADDING_X * 2)
+#define FONT_Y_OFFSET  12
 
-// --- 区域限制 ---
-#define SCROLL_BAR_W   6     
-#define CONTENT_W      (128 - SCROLL_BAR_W - 2) // 内容区总宽 (留2px空隙)
-#define MAX_TEXT_W     (CONTENT_W - CURSOR_X - PADDING_X*2) // 文字最大允许宽度
-
-// --- 字体修正 ---
-#define FONT_Y_OFFSET  12    
-
+// -- 类定义 ----------------------------------------------------------------------
 class PageVerticalMenu : public Page {
 public:
     void setMenu(MenuPage* page) {
@@ -30,188 +27,102 @@ public:
         visualIndex = vIndex;
     }
 
+    // -- 核心渲染 ----------------------------------------------------------------
     void draw(DisplayHAL* display) override {
         if (!currentData || currentData->items.empty()) return;
         const auto& items = currentData->items;
         int total = items.size();
 
-        display->setFont(u8g2_font_wqy12_t_gb2312);
+        // 1. 摄像机逻辑
+        float targetCameraY = (visualIndex - 1.5f) * LINE_Y;
+        float maxCameraY = (total * LINE_Y) - 64;
+        cameraY = constrain(targetCameraY, 0, (maxCameraY < 0 ? 0 : maxCameraY));
 
-        // 1. 计算摄像机 (Camera) 位置
-        // ------------------------------------------------
-        float targetCameraY = (visualIndex - 1.5f) * ITEM_H;
-        float maxCameraY = (total * ITEM_H) - 64;
-        if (targetCameraY < 0) targetCameraY = 0;
-        if (targetCameraY > maxCameraY) targetCameraY = maxCameraY;
-        if (maxCameraY < 0) targetCameraY = 0; // 内容不足一屏
-        cameraY = targetCameraY;
+        // 2. 绘制光标
+        drawCursor(display, items);
 
-        // 2. 绘制光标 (作为背景层)
-        // ------------------------------------------------
-        // 逻辑：光标单纯只是为了“追随”当前的 visualIndex
-        // 它的宽度取决于 visualIndex 此时此刻落在哪里
-        
-        float cursorY = (visualIndex * ITEM_H) - cameraY;
-        
-        // 计算光标的目标宽度 (根据 visualIndex 插值)
-        int idxA = (int)floor(visualIndex);
-        int idxB = idxA + 1;
-        if (idxA < 0) idxA = 0; if (idxA >= total) idxA = total - 1;
-        if (idxB >= total) idxB = total - 1;
+        // 3. 绘制文字列表
+        display->setDrawColor(2);
+        display->setFontMode(1);
+        display->setInvert(AppData.systemConfig.colorinverse);
 
-        int wA = getSafeWidth(display, items[idxA].title);
-        int wB = getSafeWidth(display, items[idxB].title);
-
-        float progress = visualIndex - idxA;
-        float currentW = wA + (wB - wA) * progress;
-        
-        // 绘制白色光标块
-        display->setDrawColor(1);
-        int boxH = 14;
-        int boxY = (int)(cursorY + (ITEM_H - boxH) / 2);
-
-        // 根据配置选择光标样式
-        switch(AppData.systemConfig.cursorStyle) {
-            case 0: // 实心矩形
-                display->drawRBox(CURSOR_X, boxY, (int)currentW, boxH, CURSOR_R);
-                break;
-            case 1: // 空心矩形
-            default:
-                display->drawRFrame(CURSOR_X, boxY, (int)currentW, boxH,CURSOR_R);
-                break;
-        }
-        // 3. 绘制文字 (XOR 叠加层)
-        // ------------------------------------------------
-        display->setDrawColor(2); // 开启异或模式 (黑底变白，白底变黑)
-        display->setFontMode(1);  // 透明背景
-
-        display->setInvert(AppData.systemConfig.colorinverse); // 颜色反转设置
-
-        int startRow = (int)(cameraY / ITEM_H);
-        int endRow = startRow + VISIBLE_ROWS + 1;
-
-        for (int i = startRow; i < endRow; i++) {
+        int startRow = (int)(cameraY / LINE_Y);
+        for (int i = startRow; i < startRow + VISIBLE_ROWS + 1; i++) {
             if (i < 0 || i >= total) continue;
-
-            // 基础坐标
-            int drawY = (int)((i * ITEM_H) - cameraY);
-            int textY = drawY + FONT_Y_OFFSET;
-            int textBaseX = CURSOR_X + PADDING_X;
-
-            // 判断焦点 (0.25 的误差允许光标稍微偏离中心时也保持选中状态)
-            bool isFocused = abs(visualIndex - i) < 0.25;
-            String text = items[i].title;
-            int strW = display->getStrWidth(text.c_str());
-
-            // 设置裁剪窗口：不管怎么滚，文字绝对不能画到右边滚动条去
-            display->setClipWindow(0, drawY, CONTENT_W, drawY + ITEM_H);
-
-            if (isFocused) {
-                // === 动态模式：选中 ===
-                if (strW > MAX_TEXT_W) {
-                    // 需要滚动
-                    unsigned long now = millis();
-                    int speed = 40; 
-                    int gap = 30;
-                    int cycle = strW + gap;
-                    
-                    // 核心修正 1: 计算准确的偏移量
-                    int offset = (now / speed) % cycle;
-
-                    // 核心修正 2: 修改裁切窗口 (ClipWindow)
-                    // 左边界改用 CURSOR_X (光标左边缘)，而不是 0
-                    // 这样文字滚到光标左边缘时就会“消失”，不会滚到屏幕最左边
-                    display->setClipWindow(CURSOR_X, drawY, CONTENT_W, drawY + ITEM_H);
-
-                    // 绘制第一段文字
-                    // textBaseX 本身就是基于 CURSOR_X + PADDING_X 计算的，所以起始位置是对的
-                    display->drawText(textBaseX - offset, textY, text.c_str());
-                    
-                    // 绘制第二段文字 (无缝循环的尾巴)
-                    // 当第一段文字往左跑，跑出了一定距离，第二段就要跟上
-                    // 只要第二段文字的“头”进入了右边的可见区域 (CONTENT_W)，就把它画出来
-                    int secondSegmentX = textBaseX - offset + cycle;
-                    if (secondSegmentX < CONTENT_W) {
-                         display->drawText(secondSegmentX, textY, text.c_str());
-                    }
-                    
-                    // 记得恢复全屏裁切，以免影响后续绘制
-                    display->setMaxClipWindow();
-
-                } else {
-                    // 选中但不够长，不需要滚动，直接居中或左对齐显示
-                    // 为了统一视觉，最好也加上裁切，防止文字偶然溢出
-                    display->setClipWindow(CURSOR_X, drawY, CONTENT_W, drawY + ITEM_H);
-                    display->drawText(textBaseX, textY, text.c_str());
-                    display->setMaxClipWindow();
-                }
-            } else {
-                // === 静态模式：未选中 ===
-                // 如果超长，就截断并加 ...
-                if (strW > MAX_TEXT_W) {
-                    String truncStr = getTruncatedString(display, text, MAX_TEXT_W);
-                    display->drawText(textBaseX, textY, truncStr.c_str());
-                } else {
-                    display->drawText(textBaseX, textY, text.c_str());
-                }
-            }
-
-            // 恢复全屏裁剪
-            display->setMaxClipWindow();
+            drawItemText(display, items[i], i);
         }
 
-        // 恢复画笔
         display->setDrawColor(1);
         display->setFontMode(0);
 
         // 4. 绘制滚动条
-        // ------------------------------------------------
-        if (total * ITEM_H > 64) {
-            int trackX = 128 - (SCROLL_BAR_W / 2) - 1;
-            display->drawLine(trackX, 0, trackX, 64);
-
-            int sliderH = (64 * 64) / (total * ITEM_H);
-            if (sliderH < 4) sliderH = 4;
-            int sliderY = (int)((cameraY / (float)((total * ITEM_H) - 64)) * (64 - sliderH));
-            
-            display->drawBox(128 - SCROLL_BAR_W + 1, sliderY, SCROLL_BAR_W - 2, sliderH);
-        }
+        drawScrollBar(display, total);
     }
-
-    void onButton(int id) override {}
 
 private:
-    MenuPage* currentData = nullptr;  // 当前菜单数据
-    float visualIndex = 0;            // 当前视觉索引 (可以是小数，用于平滑滚动)
-    float cameraY = 0;                // 当前摄像机 Y 位置
+    MenuPage* currentData = nullptr;
+    float visualIndex = 0;
+    float cameraY = 0;
 
-    // 获取考虑了边界限制的光标宽度
-    int getSafeWidth(DisplayHAL* display, String str) {
-        int w = display->getStrWidth(str.c_str()) + PADDING_X * 2;
-        // 光标最宽不能超过内容区
-        if (w > CONTENT_W - CURSOR_X) w = CONTENT_W - CURSOR_X;
-        return w;
+    // -- 内部辅助逻辑 ------------------------------------------------------------
+    void drawCursor(DisplayHAL* display, const std::vector<MenuItem>& items) {
+        float cursorY = (visualIndex * LINE_Y) - cameraY;
+        int idxA = constrain((int)floor(visualIndex), 0, (int)items.size() - 1);
+        int idxB = constrain(idxA + 1, 0, (int)items.size() - 1);
+
+        int wA = getSafeWidth(display, items[idxA].title);
+        int wB = getSafeWidth(display, items[idxB].title);
+        float currentW = wA + (wB - wA) * (visualIndex - idxA);
+
+        display->setDrawColor(1);
+        int boxY = (int)(cursorY + (LINE_Y - 14) / 2);
+        if (AppData.systemConfig.cursorStyle == 0) {
+            display->drawRBox(CURSOR_X, boxY, (int)currentW, 14, CURSOR_R);
+        } else {
+            display->drawRFrame(CURSOR_X, boxY, (int)currentW, 14, CURSOR_R);
+        }
     }
 
-    // 智能截断字符串
-    String getTruncatedString(DisplayHAL* display, String original, int maxWidth) {
-        if (display->getStrWidth(original.c_str()) <= maxWidth) return original;
-        String dots = "...";
-        int dotsW = display->getStrWidth(dots.c_str());
-        
-        String temp = original;
-        // 稍微预判一下，先根据字符数粗略砍一部分，提高效率 (可选)
-        // while (display->getStrWidth(temp.c_str()) > maxWidth + 20) {
-        //    temp.remove(temp.length() - 1);
-        // }
-        
-        // 精细裁剪
-        while (temp.length() > 0) {
-            temp.remove(temp.length() - 1);
-            if (display->getStrWidth(temp.c_str()) + dotsW <= maxWidth) {
-                return temp + dots;
+    void drawItemText(DisplayHAL* display, const MenuItem& item, int index) {
+        int drawY = (int)((index * LINE_Y) - cameraY);
+        int textBaseX = CURSOR_X + PADDING_X;
+        int strW = display->getStrWidth(item.title.c_str());
+        bool isFocused = abs(visualIndex - index) < 0.25;
+
+        display->setClipWindow(CURSOR_X, drawY, CONTENT_W, drawY + LINE_Y);
+        if (isFocused && strW > MAX_TEXT_W) {
+            int cycle = strW + 30;
+            int offset = (millis() / 40) % cycle;
+            display->drawText(textBaseX - offset, drawY + FONT_Y_OFFSET, item.title.c_str());
+            if (textBaseX - offset + cycle < CONTENT_W) {
+                display->drawText(textBaseX - offset + cycle, drawY + FONT_Y_OFFSET, item.title.c_str());
             }
+        } else {
+            String text = (strW > MAX_TEXT_W) ? getTruncatedString(display, item.title, MAX_TEXT_W) : item.title;
+            display->drawText(textBaseX, drawY + FONT_Y_OFFSET, text.c_str());
         }
-        return dots;
+        display->setMaxClipWindow();
+    }
+
+    void drawScrollBar(DisplayHAL* display, int total) {
+        if (total * LINE_Y <= 64) return;
+        int trackX = 128 - (SCROLL_BAR_W / 2) - 1;
+        display->drawLine(trackX, 0, trackX, 64);
+        int sliderH = max(4, (64 * 64) / (total * LINE_Y));
+        int sliderY = (int)((cameraY / ((total * LINE_Y) - 64)) * (64 - sliderH));
+        display->drawBox(128 - SCROLL_BAR_W + 1, sliderY, SCROLL_BAR_W - 2, sliderH);
+    }
+
+    int getSafeWidth(DisplayHAL* display, String str) {
+        return min((int)(display->getStrWidth(str.c_str()) + PADDING_X * 2), (int)(CONTENT_W - CURSOR_X));
+    }
+
+    String getTruncatedString(DisplayHAL* display, String original, int maxWidth) {
+        String temp = original;
+        int dotsW = display->getStrWidth("...");
+        while (temp.length() > 0 && (display->getStrWidth(temp.c_str()) + dotsW > maxWidth)) {
+            temp.remove(temp.length() - 1);
+        }
+        return temp + "...";
     }
 };

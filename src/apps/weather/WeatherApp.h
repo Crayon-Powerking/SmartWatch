@@ -4,86 +4,91 @@
 #include "service/NetworkService.h"
 #include <vector>
 
-// 定义一个城市槽位
+// -- 数据结构 --------------------------------------------------------------------
+
 struct CitySlot {
     char name[16];   // 显示名称 (如 "Beijing")
     char code[32];   // API查询用的拼音 (如 "beijing")
     bool isEmpty;    // 是否为空
 };
 
-// 定义预设城市 (用于第三层列表)
 struct PresetCity {
-    const char** names;
-    const char* code;
+    const char** names; // 多语言名称数组
+    const char* code;   // 城市代码
 };
 
 enum ViewState {
-        VIEW_MAIN,      // 0. 天气详情页 (显示3天预报)
-        VIEW_SLOTS,     // 1. 槽位管理页 (选择或删除)
-        VIEW_LIBRARY    // 2. 预设库页 (从列表添加)
-    };
+    VIEW_MAIN,      // 0. 天气详情页
+    VIEW_SLOTS,     // 1. 城市管理页 (仿 AlarmApp 列表)
+    VIEW_LIBRARY    // 2. 预设库页
+};
 
+// -- 类定义 ----------------------------------------------------------------------
 class WeatherApp : public AppBase {
 public:
     WeatherApp() {}
+    virtual ~WeatherApp() {}
     
-    // --- AppBase 生命周期接口 ---
     void onRun(AppController* sys) override;
-    int  onLoop() override;
+    int onLoop() override;
     void onExit() override;
     virtual bool isKeepAlive() override { return false; }
 
 private:
-    AppController* sys;
+    AppController* sys = nullptr;
     
+    // 状态变量
     ViewState viewState = VIEW_MAIN;
-    bool isExiting = false;             // 退出标志位
+    bool isExiting = false;
 
-    // --- 数据模型 ---
+    // 数据模型
     CitySlot slots[5];                  // 5个固定槽位
-    int activeSlotIndex = 0;            // 当前正在展示天气的城市（不要随便动它）
-    int editingSlotIndex = -1;          // 当前正在看哪个槽位
+    int activeSlotIndex = 0;            // 当前正在展示天气的城市
+    int editingSlotIndex = -1;          // 当前正在编辑的槽位
     WeatherForecast forecast;           // 存储获取到的3天数据
     bool isLoading = false;             // 是否正在联网
     bool pendingWeatherUpdate = false;  // 标记需要刷新天气
 
-    // --- 预设城市列表 ---
-    static const std::vector<PresetCity> PRESETS;
-
-    // --- UI 动画变量  ---
+    // UI 动画变量
     float selectionSmooth = 0.0f;
-    float scrollY = 0;                  // 当前渲染位置
-    float targetY = 0;                  // 目标位置
-    int   selectedIndex = 0;            // 当前选中的列表项索引
+    float scrollY = 0.0f;               // 当前渲染位置
+    int selectedIndex = 0;              // 当前选中的列表项索引 (-1 = Back)
+    float slideX = 0.0f;                // 0=Main, -128=Slots, -256=Library
+    float targetSlideX = 0.0f;
 
-    // 视图切换动画 (X轴滑动)
-    float slideX = 0;                   // 0=Main, -128=Slots, -256=Library
-    float targetSlideX = 0;
+    // 布局常量 (完全复刻 AlarmApp)
+    static constexpr int HEADER_H     = 16;
+    static constexpr int SPLIT_X      = 88;
+    static constexpr int RIGHT_CENTER = 108;
+    static constexpr int LIST_ITEM_H  = 16;
 
-    bool isDeleting = false;            // 是否正在按住删除
+    // 交互变量
     float deleteProgress = 0.0f;        // 删除进度 (0.0 - 1.0)
-    unsigned long pressStartTime = 0;   // 按下开始的时间
-    unsigned long lastHoldTick = 0;     // 用于检测长按是否中断
-    unsigned long ignoreClickUntil = 0; // 忽略点击直到某时间点
+    unsigned long ignoreClickUntil = 0; // 防误触时间戳
     unsigned long lastFrameTime = 0;    // 上一帧时间戳
 
-    // 内部功能函数
-    void handleInput();                 // 按键处理
-    void render();                      // 总渲染入口
-    
-    // 子渲染函数
-    void renderMainView();              // 画天气
-    void renderSlotsView();             // 画槽位
-    void renderLibraryView();           // 画预设库
-    const char* getSlotName(int idx);   // 获取槽位显示名称
+    // 预设城市列表
+    static const std::vector<PresetCity> PRESETS;
 
-    const char* getWeatherText(int code);       // 天气文字描述
-    const uint8_t* getWeatherIcon(int code);    // 天气图标映射
-    void loadSlots();                   // 从 Storage 读取槽位
-    void saveSlots();                   // 保存槽位到 Storage
-    void refreshWeather();              // 联网动作
+    // 内部逻辑
+    void loadSlots();
+    void saveSlots();
+    void refreshWeather();
+    void deleteCurrentSlot();
+    const char* getSlotName(int idx);
+    const char* getWeatherText(int code);
+    const uint8_t* getWeatherIcon(int code);
 
-    void deleteCurrentSlot();           // 执行删除动作
-    void drawTrashIcon(int x, int y);   // 画垃圾桶
-    int getCityCount();                 // 统计非空城市数量
+    // 按键处理
+    void onKeyUp();
+    void onKeyDown();
+    void onKeySelect();
+    void onKeyLongPressSelect();
+    void onKeyHoldSelect(float dt);
+
+    // 渲染方法
+    void render();
+    void renderMainView();
+    void renderSlotsView();
+    void renderLibraryView();
 };

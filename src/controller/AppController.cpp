@@ -3,7 +3,16 @@
 #include "assets/AppIcons.h"
 #include "assets/Lang.h"
 
-AppController::AppController() : btnSelect(PIN_BTN_SELECT), btnUp(PIN_BTN_UP),btnDown(PIN_BTN_DOWN) {}
+// -- 辅助函数 --------------------------------------------------------------------
+
+void AppController::checkSleep() {
+    if (isSleeping || (currentApp && currentApp->isKeepAlive()) || AppData.systemConfig.sleepTimeout == 0 || isAlarmRinging) return;
+    
+    if (millis() - lastActiveTime > (unsigned long)AppData.systemConfig.sleepTimeout * 1000) {
+        isSleeping = true;
+        display.setPowerSave(1);
+    }
+}
 
 void AppController::wakeUp() {
     if (isSleeping) {
@@ -12,279 +21,37 @@ void AppController::wakeUp() {
     }
 }
 
-void AppController::onButtonEvent() {
-    lastActiveTime = millis();
-    if (isSleeping) {
-        wakeUp();
-    }
-}
-
-void AppController::checkSleep() {
-    if (isSleeping) return;
-    // 如果当前在运行 App，则重置计时器并返回
-    if (currentApp && currentApp->isKeepAlive()) {
-        return;
-    }
-    // 如果设置为 "永不息屏"，直接返回
-    if (AppData.systemConfig.sleepTimeout == 0) return;
-
-    // 检查是否超时
-    unsigned long timeoutMs = AppData.systemConfig.sleepTimeout * 1000;
-    
-    if (millis() - lastActiveTime > timeoutMs) {
-        isSleeping = true;
-        display.setPowerSave(1);
-    }
-}
-
-// 绑定系统按键事件到菜单控制器
-void AppController::bindSystemEvents() {
-    // [SELECT 单击]
-    btnSelect.attachClick([this](){
-        bool wasSleeping = isSleeping;
-        this->onButtonEvent();
-        if(wasSleeping) return;
-        if (currentApp) return; 
-        if (!inMenuMode && !isSleeping) {
-            inMenuMode = true;
-            if (rootMenu && !rootMenu->items.empty()) {
-                rootMenu->selectedIndex = rootMenu->items.size() / 2;
-            }
-            menuCtrl.init(rootMenu);
-        } else {
-            menuCtrl.enter();
-        }
-    });
-
-    // [SELECT 长按]
-    btnSelect.attachLongPress([this](){
-        bool wasSleeping = isSleeping;
-        this->onButtonEvent();
-        if(wasSleeping) return;
-        if (currentApp) return; 
-        if (inMenuMode) {
-            if (!menuCtrl.back()) inMenuMode = false;
-        } else {
-            storage.save();
-            toast.show(STR_SAVED[AppData.systemConfig.languageIndex]);
-        }
-    });
-
-    // [UP 单击]
-    btnUp.attachClick([this](){
-        this->onButtonEvent();
-        if (currentApp) return; 
-        if (inMenuMode) menuCtrl.prev();
-        else watchFace.onButton(EVENT_KEY_UP);
-    });
-
-    // [UP 连发]
-    btnUp.attachDuringLongPress([this](){
-        this->onButtonEvent();
-        if (currentApp) return; 
-        if (inMenuMode) {
-            static unsigned long lastTrig = 0;
-            if (millis() - lastTrig > 150) {
-                menuCtrl.prev();
-                lastTrig = millis();
-            }
-        }
-    });
-
-    // [DOWN 单击]
-    btnDown.attachClick([this](){
-        this->onButtonEvent();
-        if (currentApp) return; 
-        if (inMenuMode) menuCtrl.next();
-        else watchFace.onButton(EVENT_KEY_DOWN);
-    });
-
-    // [DOWN 连发]
-    btnDown.attachDuringLongPress([this](){
-        this->onButtonEvent();
-        if (currentApp) return; 
-        if (inMenuMode) {
-            static unsigned long lastTrig = 0;
-            if (millis() - lastTrig > 150) {
-                menuCtrl.next();
-                lastTrig = millis();
-            }
-        }
-    });  
-}
-
-void AppController::begin() {
-    lastActiveTime = millis();
-    // 1. 启动硬件和服务
-    storage.begin();
-    storage.load();
-    display.begin();
-    btnSelect.begin();
-    btnUp.begin();
-    btnDown.begin();
-    imu.begin();
-    network.begin(WIFI_SSID, WIFI_PASS);
-
-    // 2. 构建菜单树
-    MenuFactory::build(this);
-    
-    // 3. 调用事件绑定
-    bindSystemEvents();
-
-    // 4. 初始化计时器
-    timerWeather = 0;
-    timerSave = millis();
-}
-
-void AppController::destroyMenuTree() {
-    for (auto page : pageList) {
-        delete page;
-    }
-    pageList.clear();
-    rootMenu = nullptr;
-    menuCtrl.init(nullptr);
-}
-
-// 启动 App
-void AppController::startApp(AppBase* app) {
-    if (currentApp) return; // 防止重复启动
-    
-    inMenuMode = false; // 退出菜单模式
-    currentApp = app;
-    
-    // 调用 App 的生命周期 setup，并传入 controller 指针
-    if (currentApp) {
-        currentApp->onRun(this);
-    }
-}
-
-// 退出 App
-void AppController::quitApp() {
-    if (!currentApp) return;
-
-    // 1. 清理
-    currentApp->onExit();
-    delete currentApp;
-    currentApp = nullptr;
-
-    // 2. 恢复系统的按键接管
-    bindSystemEvents();
-
-    // 3. 恢复界面
-    inMenuMode = true; 
-
-    if (menuCtrl.getCurrentPage() == nullptr) {
-        menuCtrl.init(rootMenu);
-    }
-    lastActiveTime = millis();
-
-    display.clear();
-    display.update();
-}
-
-void AppController::tick() {
-
-    if (reloadPending) {
-        reloadPending = false;
-        destroyMenuTree();
-        MenuFactory::build(this); // 重建
-        
-        // 重置到主菜单
-        inMenuMode = true;
-        menuCtrl.init(rootMenu);
-        return; 
-    }
-
-    delay(1); 
-
-    btnSelect.tick();
-    btnUp.tick();
-    btnDown.tick();
-    
-    unsigned long now = millis();
-    static unsigned long lastImuTime = 0;
-
-    if (now - lastImuTime > 30) {
-        imu.update(); 
-        if(imu.checkStep()) {
-            AppData.runtimeCache.stepCount++;
-        }
-        if (isSleeping && imu.isLiftWrist()) {
-            wakeUp();                 // 唤醒屏幕
-            lastActiveTime = millis();
-        }
-        lastImuTime = now;
-    }
-
-    checkSleep();
-    if (isSleeping) {
-        delay(50); 
-        return; 
-    }
-
-    if (currentApp) {
-        // 执行 App 循环，并检查返回值
-        int status = currentApp->onLoop();
-        if (status != 0) {
-            quitApp();
-        } else {
-            network.tick(); // 保持网络心跳
-        }
-        return;
-    }
-
-    // --- 以下是常规系统模式 (表盘/菜单) ---
-
-    network.tick();
-    AppData.isWifiConnected = network.isConnected();
-    static unsigned long wifiConnectTime = 0;
-    static bool lastWifiState = false;
-    if (AppData.isWifiConnected && !lastWifiState) {
-        wifiConnectTime = millis();
-    }
-    lastWifiState = AppData.isWifiConnected;
-
-    now = millis();
-    // 菜单动画
-    static unsigned long lastAnimTick = 0;
-    if (inMenuMode && (now - lastAnimTick > 10)) {
-        menuCtrl.tick(); 
-        lastAnimTick = now;
-    }
-
-    // 智能天气
-    if (network.isConnected()) {
-        if (now - wifiConnectTime > 2000) { 
-            if (timerWeather == 0 || (now - timerWeather > CONFIG_WEATHER_INTERVAL)) {
-                checkWeather();
-            }
-        }
-    }
-    
-    // 步数检查
-    checkDayChange();
-    
-    // 自动保存
-    if (now - timerSave > CONFIG_AUTO_SAVE_INTERVAL) {
+void AppController::checkDayChange() {
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo, 0) || timeinfo.tm_year < 120) return;
+    int currentDayCode = (timeinfo.tm_year + 1900) * 10000 + (timeinfo.tm_mon + 1) * 100 + timeinfo.tm_mday;
+    if (currentDayCode != AppData.runtimeCache.lastStepDay) {        
+        AppData.runtimeCache.stepCount = 0;
+        AppData.runtimeCache.lastStepDay = currentDayCode;
         storage.save();
-        timerSave = now;
-    }
-
-    // 渲染
-    static unsigned long lastRender = 0;
-    if (now - lastRender > 33) { 
-        render();
-        lastRender = now;
     }
 }
 
-// 检查并更新天气数据（在后台任务中执行）
+void AppController::checkClock() {
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo, 0)) return;
+    if (timeinfo.tm_min == lastAlarmMinute) return; 
+    lastAlarmMinute = timeinfo.tm_min;
+    for (int i = 0; i < MAX_ALARMS; i++) {
+        if (!AppData.alarmSlots[i].isUsed || !AppData.alarmSlots[i].isOpen) continue;
+        if (AppData.alarmSlots[i].hour == timeinfo.tm_hour && 
+            AppData.alarmSlots[i].minute == timeinfo.tm_min) {
+            if ((AppData.alarmSlots[i].weekMask >> timeinfo.tm_wday) & 1) {
+                if (isSleeping) wakeUp(); // 唤醒屏幕
+                isAlarmRinging = true;
+                toast.show(STR_ALARM_WARNING[AppData.systemConfig.languageIndex], CONFIG__ALARMING);
+            }
+        }
+    }
+}
+
 void AppController::checkWeather() {
-    // 防止重复创建任务
     if (weatherTaskHandle != NULL) return; 
-    
-    // 创建 FreeRTOS 任务获取天气
-    // 堆栈大小 4096, 优先级 1
     xTaskCreate(weatherTask, "WeatherTask", 4096, this, 1, &weatherTaskHandle);
 }
 
@@ -304,42 +71,247 @@ void AppController::weatherTask(void* parameter) {
     vTaskDelete(NULL);
 }
 
-void AppController::checkDayChange() {
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 0)) return;
-    if (timeinfo.tm_year < (2020 - 1900)) return;
-
-    int currentDayCode = (timeinfo.tm_year + 1900) * 10000 + (timeinfo.tm_mon + 1) * 100 + timeinfo.tm_mday;
-
-    if (AppData.runtimeCache.lastStepDay == 0) {
-        AppData.runtimeCache.lastStepDay = currentDayCode;
-        storage.save();
-        return;
-    }
-
-    if (currentDayCode != AppData.runtimeCache.lastStepDay) {        
-        AppData.runtimeCache.stepCount = 0;
-        AppData.runtimeCache.lastStepDay = currentDayCode;
-        storage.save();
+void AppController::forceWeatherUpdate() {
+    if (network.isConnected() && weatherTaskHandle == NULL) {
+        checkWeather(); 
     }
 }
 
+void AppController::destroyMenuTree() {
+    for (auto page : pageList) delete page;
+    pageList.clear();
+    rootMenu = nullptr;
+    menuCtrl.init(nullptr);
+}
+
+// -- 按键处理 --------------------------------------------------------------------
+
+bool AppController::processInput() {
+    lastActiveTime = millis();
+
+    if (isAlarmRinging) {
+        isAlarmRinging = false;
+        toast.hide();
+        return false;
+    }
+
+    if (isSleeping) {
+        wakeUp();
+        return false; 
+    }
+    return true; 
+}
+
+// 具体的按键逻辑实现
+void AppController::onKeySelect() {
+    if (!processInput() || currentApp) return;
+    if (!inMenuMode) {
+        inMenuMode = true;
+        menuCtrl.init(rootMenu);
+    } else {
+        menuCtrl.enter();
+    }
+}
+
+void AppController::onKeySelectLongPress() {
+    if (!processInput() || currentApp) return;
+    if (inMenuMode) {
+        if (!menuCtrl.back()) inMenuMode = false;
+    } else {
+        storage.save();
+        toast.show(STR_SAVED[AppData.systemConfig.languageIndex]);
+    }
+}
+
+void AppController::onKeyUp() {
+    if (processInput() && !currentApp) {
+        inMenuMode ? menuCtrl.prev() : watchFace.onButton(EVENT_KEY_UP);
+    }
+}
+
+void AppController::onKeyDown() {
+    if (processInput() && !currentApp) {
+        inMenuMode ? menuCtrl.next() : watchFace.onButton(EVENT_KEY_DOWN);
+    }
+}
+
+void AppController::bindSystemEvents() {
+    // 按键逻辑捆版
+    btnSelect.attachClick([this](){ this->onKeySelect(); });
+    btnSelect.attachLongPress([this](){ this->onKeySelectLongPress(); });
+    btnUp.attachClick([this](){ this->onKeyUp(); });
+    btnDown.attachClick([this](){ this->onKeyDown(); });
+    
+    // 长按连滚逻辑
+    auto repeatScroll = [this](bool up) {
+        static unsigned long lastTrig = 0;
+        if (processInput() && !currentApp && inMenuMode && (millis() - lastTrig > 150)) {
+            up ? menuCtrl.prev() : menuCtrl.next();
+            lastTrig = millis();
+        }
+    };
+    
+    btnUp.attachDuringLongPress([this, repeatScroll](){ repeatScroll(true); });
+    btnDown.attachDuringLongPress([this, repeatScroll](){ repeatScroll(false); });
+}
+
+// -- 生命周期 (App函数) -----------------------------------------------------------
+
+AppController::AppController() 
+    : btnSelect(PIN_BTN_SELECT), btnUp(PIN_BTN_UP), btnDown(PIN_BTN_DOWN) {}
+
+void AppController::begin() {
+    lastActiveTime = millis();
+
+    // 1. 启动硬件和服务
+    storage.begin();
+    storage.load();
+    display.begin();
+    btnSelect.begin();
+    btnUp.begin();
+    btnDown.begin();
+    imu.begin();
+    network.begin(WIFI_SSID, WIFI_PASS);
+
+    // 2. 构建菜单树并绑定按键
+    MenuFactory::build(this);
+    bindSystemEvents();
+
+    // 3. 初始化计时器
+    timerWeather = 0;
+    timerSave = millis();
+}
+
+void AppController::tick() {
+    // -- 1. 系统重载与硬件维护 ----------------------------------------------------
+    if (reloadPending) {
+        reloadPending = false;
+        destroyMenuTree();
+        MenuFactory::build(this);
+        inMenuMode = true;
+        menuCtrl.init(rootMenu);
+        return; 
+    }
+
+    delay(1); 
+    btnSelect.tick();
+    btnUp.tick();
+    btnDown.tick();
+    
+    unsigned long now = millis();
+
+    // -- 2. 后台服务 (传感器 / 时间 / 存储 / 网络) ---------------------------------
+    
+    // IMU 计步与抬腕检测
+    static unsigned long lastImuTime = 0;
+    if (now - lastImuTime > 30) {
+        imu.update(); 
+        if(imu.checkStep()) AppData.runtimeCache.stepCount++;
+        if (isSleeping && imu.isLiftWrist()) {
+            wakeUp();
+            lastActiveTime = millis();
+        }
+        lastImuTime = now;
+    }
+
+    // 基础时间服务
+    checkClock();
+    checkDayChange();
+    
+    // 自动保存
+    if (now - timerSave > CONFIG_AUTO_SAVE_INTERVAL) {
+        storage.save();
+        timerSave = now;
+    }
+
+    // 网络服务整合 (心跳维护 + 状态同步)
+    network.tick(); // 维持协议栈运行，确保自动重连机制生效
+
+    static unsigned long lastNetCheck = 0;
+    if (now - lastNetCheck > 1000) {
+        // 每秒同步一次连接状态，避免高频调用底层 API 拖慢系统
+        AppData.isWifiConnected = network.isConnected(); 
+        lastNetCheck = now;
+    }
+
+    // -- 3. 睡眠门控 --------------------------------------------------------------
+    checkSleep();
+    if (isSleeping) {
+        delay(50); // 息屏降频
+        return;    // 阻断渲染与UI逻辑
+    }
+
+    // -- 4. 前台服务 (仅亮屏运行) -------------------------------------------------
+
+    // 天气更新 (网络已连且到达更新间隔)
+    if (AppData.isWifiConnected) {
+        if (timerWeather == 0 || (now - timerWeather > CONFIG_WEATHER_INTERVAL)) {
+            checkWeather();
+        }
+    }
+
+    // 应用逻辑流
+    if (currentApp) {
+        if (currentApp->onLoop() != 0) {
+            quitApp();
+            return; // 退出当前帧
+        }
+    } else {
+        // 菜单动画逻辑
+        static unsigned long lastAnimTick = 0;
+        if (inMenuMode && (now - lastAnimTick > 10)) {
+            menuCtrl.tick(); 
+            lastAnimTick = now;
+        }
+    }
+
+    // -- 5. 渲染管线 (30FPS) ------------------------------------------------------
+    static unsigned long lastRender = 0;
+    if (now - lastRender > 33) { 
+        lastRender = now;
+        
+        if (!currentApp) render(); // 无App时绘制系统界面
+        
+        toast.draw(&display);      // 绘制弹窗
+        display.update();          // 统一提交显存
+    }
+}
+
+void AppController::startApp(AppBase* app) {
+    if (currentApp || !app) return;
+    inMenuMode = false;
+    currentApp = app;
+    currentApp->onRun(this);
+}
+
+void AppController::quitApp() {
+    if (!currentApp) return;
+    currentApp->onExit();
+    delete currentApp;
+    currentApp = nullptr;
+    bindSystemEvents();
+    inMenuMode = true; 
+    if (menuCtrl.getCurrentPage() == nullptr) menuCtrl.init(rootMenu);
+    lastActiveTime = millis();
+    display.clear();
+    display.update();
+}
+
+// -- 渲染绘制 --------------------------------------------------------------------
+
 void AppController::render() {
     if (currentApp) return;
-
-    display.clear(); // 清屏
+    display.clear();
 
     if (inMenuMode) {
         MenuPage* currentPage = menuCtrl.getCurrentPage();
         float visualIndex = menuCtrl.getVisualIndex();
-        
         if (currentPage) {
             if (currentPage->layout == LAYOUT_ICON) {
                 pageHorizontal.setMenu(currentPage);
                 pageHorizontal.setVisualIndex(visualIndex);
                 pageHorizontal.draw(&display);
-            } 
-            else {
+            } else {
                 pageVertical.setMenu(currentPage);
                 pageVertical.setVisualIndex(visualIndex);
                 pageVertical.draw(&display);
@@ -347,15 +319,5 @@ void AppController::render() {
         }
     } else {
         watchFace.draw(&display);
-    }
-
-    toast.draw(&display);
-    display.update();
-}
-
-void AppController::forceWeatherUpdate() {
-    // 只有在联网且当前没有正在进行的天气任务时，才执行
-    if (network.isConnected() && weatherTaskHandle == NULL) {
-        checkWeather(); // 立即启动后台任务
     }
 }

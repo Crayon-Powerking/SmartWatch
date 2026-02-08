@@ -1,122 +1,97 @@
 #pragma once
+
 #include "Page.h"
 #include "model/AppData.h"
 #include "assets/AppIcons.h"
 #include <stdio.h>
 #include <time.h>
 
+// -- 类定义 ----------------------------------------------------------------------
 class PageWatchFace : public Page {
 public:
     void draw(DisplayHAL* display) override {
-        // --------------- 顶部状态栏 ---------------
+        drawStatusBar(display);
+        drawTimeArea(display);
+        drawWeatherStepBar(display);
+    }
+
+private:
+    // -- 内部辅助绘制 ------------------------------------------------------------
+    void drawStatusBar(DisplayHAL* display) {
         display->setFont(u8g2_font_6x10_tf);
-        // --- 日期 (左上角) ---
         display->drawText(2, 9, getDateString().c_str());
 
-        // --- WiFi 图标 ---
         if (AppData.isWifiConnected) {
             display->setFont(u8g2_font_open_iconic_www_1x_t); 
             display->drawGlyph(96, 9, 72); 
         }
 
-        // --- 电池 (右上角) ---
-        display->setDrawColor(1);
-        display->drawFrame(106, 0, 18, 10); // 电池框
-        display->drawBox(124, 3, 2, 4);     // 电池头
-        
-        // 计算电量条
-        int width = (AppData.batteryLevel * 14) / 100;
-        if (width > 14) width = 14; 
+        display->drawFrame(106, 0, 18, 10);
+        display->drawBox(124, 3, 2, 4);
+        int width = constrain((AppData.batteryLevel * 14) / 100, 0, 14);
         if (width > 0) display->drawBox(108, 2, width, 6);
-
-        // 分割线
         display->drawLine(0, 12, 128, 12);
+    }
 
-        // --------------- 时间显示 ---------------
+    void drawTimeArea(DisplayHAL* display) {
         String timeStr = getTimeString();
-        int sec = getSecond();
         char secStr[5];
-        sprintf(secStr, ":%02d", sec);
+        sprintf(secStr, ":%02d", getSecond());
 
-        int TIME_X = 8; 
-        int TIME_Y = 44; 
-        
-        // 主时间
         display->setFont(u8g2_font_helvB24_tf); 
-        display->drawText(TIME_X, TIME_Y, timeStr.c_str());
+        display->drawText(8, 44, timeStr.c_str());
         
-        // 秒数
         int wMain = display->getStrWidth(timeStr.c_str());
         display->setFont(u8g2_font_helvB14_tf); 
-        display->drawText(TIME_X + wMain + 2, TIME_Y, secStr);
+        display->drawText(8 + wMain + 2, 44, secStr);
+    }
 
-        // --------------- 底部状态栏 ---------------
-        int footerY = 64;               // 屏幕底部坐标
-        int iconSize = 16;              // 图标大小 16x16
-        int iconY = footerY - iconSize; // 图标 Y = 48
-        int textBaseY = footerY - 2;    // 文字基线 Y = 62 
-        
+    void drawWeatherStepBar(DisplayHAL* display) {
         display->setFont(u8g2_font_ncenB08_tr); 
-
-        // 左侧天气信息
-        if (AppData.runtimeCache.weatherCode == 99) {
-            // 默认处理
-            display->drawText(2, textBaseY, "--");
-            display->drawIcon(0, iconY, iconSize, iconSize, icon_fault);
-        } else {
-
-            const uint8_t* weatherIcon = getWeatherIcon(AppData.runtimeCache.weatherCode);
-            display->drawIcon(0, iconY, iconSize, iconSize, weatherIcon);
-
+        
+        // 天气
+        const uint8_t* icon = (AppData.runtimeCache.weatherCode == 99) ? icon_fault : getWeatherIcon(AppData.runtimeCache.weatherCode);
+        display->drawIcon(0, 48, 16, 16, icon);
+        if (AppData.runtimeCache.weatherCode != 99) {
             char tempStr[16];
-            sprintf(tempStr, "%d C", AppData.runtimeCache.temperature); 
-            display->drawText(18, textBaseY, tempStr);
+            sprintf(tempStr, "%d C", AppData.runtimeCache.temperature);
+            display->drawText(18, 62, tempStr);
         }
 
-        // 右侧步数信息
-        int stepIconX = 128 - iconSize; 
-        display->drawIcon(stepIconX, iconY, iconSize, iconSize, icon_footprint);
+        // 步数
+        display->drawIcon(112, 48, 16, 16, icon_footprint);
         char stepStr[16];
         sprintf(stepStr, "%d", AppData.runtimeCache.stepCount);
-        int stepTextW = display->getStrWidth(stepStr);
-        int stepTextX = stepIconX - 2 - stepTextW;
-        display->drawText(stepTextX, textBaseY, stepStr);
+        display->drawText(110 - display->getStrWidth(stepStr), 62, stepStr);
     }
 
-private:
-    // 天气代码匹配图标
+    // -- 数据获取辅助 ------------------------------------------------------------
     const uint8_t* getWeatherIcon(int code) {
-        if (code == 1 || code == 3) return icon_weather_sunny_evening;  // 晚上
-        if (code == 0 || code == 2) return icon_weather_sunny;          // 白天
-        if (code >= 4 && code <= 9) return icon_weather_cloudy;         // 多云/阴
-        if (code >= 10 && code <= 19) return icon_weather_rain;         // 雨
-        if (code >= 20 && code <= 25) return icon_weather_snow;         // 雪
-        if (code >= 26 && code <= 38) return icon_weather_fog;          // 雾/霾/沙
-        return icon_fault;                                              // 故障/未知
+        if (code <= 3) return (code == 1 || code == 3) ? icon_weather_sunny_evening : icon_weather_sunny;
+        if (code <= 9) return icon_weather_cloudy;
+        if (code <= 19) return icon_weather_rain;
+        if (code <= 25) return icon_weather_snow;
+        return icon_weather_fog;
     }
 
-    // 获取时间字符串
     String getTimeString() {
-        struct tm timeinfo;
-        if(!getLocalTime(&timeinfo, 0)) return "13:14";
+        struct tm info;
+        if(!getLocalTime(&info, 0)) return "13:14";
         char buf[10];
-        sprintf(buf, "%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
+        sprintf(buf, "%02d:%02d", info.tm_hour, info.tm_min);
         return String(buf);
     }
 
-    // 获取日期字符串 (MM-DD Mon)
     String getDateString() {
-        struct tm timeinfo;
-        if(!getLocalTime(&timeinfo, 0)) return "05-20 Mon";
+        struct tm info;
+        if(!getLocalTime(&info, 0)) return "05-20 Mon";
         char buf[32];
-        strftime(buf, 32, "%m-%d %a", &timeinfo);
+        strftime(buf, 32, "%m-%d %a", &info);
         return String(buf);
     }
 
-    // 获取秒数
     int getSecond() {
-        struct tm timeinfo;
-        if(!getLocalTime(&timeinfo, 0)) return 0;
-        return timeinfo.tm_sec;
+        struct tm info;
+        return getLocalTime(&info, 0) ? info.tm_sec : 0;
     }
 };

@@ -1,14 +1,16 @@
 #include "hal/DisplayHAL.h"
 
+// -- 构造与初始化 ----------------------------------------------------------------
+
 DisplayHAL::DisplayHAL()
     : u8g2(U8G2_R0, PIN_OLED_CS, PIN_OLED_DC, PIN_OLED_RES) {
 }
 
 void DisplayHAL::begin() {
     u8g2.begin();
-    u8g2.setFont(u8g2_font_ncenB10_tr); 
+    u8g2.setFont(u8g2_font_ncenB10_tr);
     u8g2.enableUTF8Print();
-    u8g2.setFontMode(1); 
+    u8g2.setFontMode(1);
 }
 
 void DisplayHAL::clear() {
@@ -18,6 +20,8 @@ void DisplayHAL::clear() {
 void DisplayHAL::update() {
     u8g2.sendBuffer();
 }
+
+// -- 窗口与字体设置 --------------------------------------------------------------
 
 void DisplayHAL::setClipWindow(int x0, int y0, int x1, int y1) {
     u8g2.setClipWindow(x0, y0, x1, y1);
@@ -35,6 +39,8 @@ void DisplayHAL::setFontMode(uint8_t mode) {
     u8g2.setFontMode(mode);
 }
 
+// -- 文本与基础图形绘制 ----------------------------------------------------------
+
 int DisplayHAL::getStrWidth(const char* text) {
     return u8g2.getUTF8Width(text);
 }
@@ -51,8 +57,8 @@ void DisplayHAL::drawFrame(int x, int y, int width, int height) {
     u8g2.drawFrame(x, y, width, height);
 }
 
-void DisplayHAL::drawRFrame(int x, int y, int width, int height,int radius) {
-    u8g2.drawRFrame(x, y, width, height,radius);
+void DisplayHAL::drawRFrame(int x, int y, int width, int height, int radius) {
+    u8g2.drawRFrame(x, y, width, height, radius);
 }
 
 void DisplayHAL::drawBox(int x, int y, int width, int height) {
@@ -87,33 +93,15 @@ void DisplayHAL::drawPixel(int x, int y) {
     u8g2.drawPixel(x, y);
 }
 
-void DisplayHAL::setInvert(bool invert){
-    if (invert) {
-        u8g2.sendF("c", 0xA7);
-    } else {
-        u8g2.sendF("c", 0xA6);
-    }
-}
-
-void DisplayHAL::setPowerSave(bool isEnable) {
-    u8g2.setPowerSave(isEnable ? 1 : 0);
-}
-
-void DisplayHAL::setAlwaysOn(bool isEnable) {
-    if (isEnable) {
-        u8g2.sendF("c", 0xA5);
-    } else {
-        u8g2.sendF("c", 0xA4);
-    }
-}
+// -- 高级绘图 --------------------------------------------------------------------
 
 void DisplayHAL::drawProgressArc(int x, int y, int radius, float progress) {
     if (progress <= 0.0f) return;
     if (progress > 1.0f) progress = 1.0f;
 
-    float startAngle = -M_PI / 2.0f; 
+    float startAngle = -M_PI / 2.0f;
     float endAngle = startAngle + (progress * 2.0f * M_PI);
-    float step = 0.2f; 
+    float step = 0.2f;
 
     float currentAngle = startAngle;
 
@@ -131,5 +119,27 @@ void DisplayHAL::drawProgressArc(int x, int y, int radius, float progress) {
 
         prevX = currX;
         prevY = currY;
+    }
+}
+
+// -- 电源与屏幕控制 --------------------------------------------------------------
+
+void DisplayHAL::setInvert(bool invert) {
+    if (invert) {
+        u8g2.sendF("c", 0xA7);
+    } else {
+        u8g2.sendF("c", 0xA6);
+    }
+}
+
+void DisplayHAL::setPowerSave(bool isEnable) {
+    u8g2.setPowerSave(isEnable ? 1 : 0);
+}
+
+void DisplayHAL::setAlwaysOn(bool isEnable) {
+    if (isEnable) {
+        u8g2.sendF("c", 0xA5);
+    } else {
+        u8g2.sendF("c", 0xA4);
     }
 }

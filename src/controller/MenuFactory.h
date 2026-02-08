@@ -1,7 +1,9 @@
 #pragma once
+
 #include "controller/AppController.h" 
 
+// -- 类定义 ----------------------------------------------------------------------
 class MenuFactory {
 public:
-    static void build(AppController* app);  // 构建菜单树
+    static void build(AppController* app);  
 };

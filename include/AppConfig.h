@@ -1,33 +1,38 @@
 #pragma once
 
-// --- 项目元数据 ---
-#define PROJECT_NAME "SmartWatch"
-#define PROJECT_VERSION "0.1.0"
+// -- 项目元数据 ------------------------------------------------------------------
+#define PROJECT_NAME                "SmartWatch"
+#define PROJECT_VERSION             "0.1.0"
 
-// --- 硬件引脚定义 (基于 ESP32 Wroom) ---
-// OLED 显示屏引脚
-#define PIN_OLED_CS   5
-#define PIN_OLED_DC   16
-#define PIN_OLED_RES  4
-// 注意：SDA(23) 和 SCL(18) 是硬件默认引脚，不需要在这里定义
+// -- 硬件引脚定义 (基于 ESP32 Wroom) ---------------------------------------------
 
-// --- 输入设备引脚 ---
-#define PIN_BTN_SELECT  0   // 板载按键 -> 确认/切换
-#define PIN_BTN_UP    13  // D13 -> 增加
-#define PIN_BTN_DOWN  14  // D14 -> 减少
+// OLED 显示屏 (SPI)
+#define PIN_OLED_CS                 5
+#define PIN_OLED_DC                 16
+#define PIN_OLED_RES                4
+// 注意：SDA(23) 和 SCL(18) 是硬件 I2C 默认引脚，无需重定义
 
-// --- 用户配置 (User Configuration) ---
-#define WIFI_SSID     "User"
-#define WIFI_PASS     "Crayon666"
-// 天气 API 设置
-#define WEATHER_KEY         "SvagmpHNnsfuweKoz"
-#define WEATHER_CITY        "hefei"
-#define WEATHER_CITY_default  0
+// 输入按键
+#define PIN_BTN_SELECT              0       // 确认/切换 (板载 BOOT 键)
+#define PIN_BTN_UP                  13      // 向上 (D13)
+#define PIN_BTN_DOWN                14      // 向下 (D14)
 
-// 1. 自动保存间隔 (毫秒)
-// 比如：5分钟 = 5 * 60 * 1000 = 300000
-#define CONFIG_AUTO_SAVE_INTERVAL  300000 
+// -- 用户配置 (User Configuration) -----------------------------------------------
 
-// 2. 天气更新检查间隔 (毫秒)
-// 比如：1小时 = 3600 * 1000
-#define CONFIG_WEATHER_INTERVAL    3600000
+// WiFi 设置
+#define WIFI_SSID                   "User"
+#define WIFI_PASS                   "Crayon666"
+
+// 天气 API 设置 (心知天气)
+#define WEATHER_KEY                 "SvagmpHNnsfuweKoz"
+
+// -- 系统定时配置 (单位: 毫秒) ---------------------------------------------------
+
+// 闹铃显示时长 (1分钟 = 60,000 ms)
+#define CONFIG__ALARMING   60000 
+
+// 自动保存间隔 (5分钟 = 300,000 ms)
+#define CONFIG_AUTO_SAVE_INTERVAL   300000 
+
+// 天气更新间隔 (1小时 = 3,600,000 ms)
+#define CONFIG_WEATHER_INTERVAL     3600000

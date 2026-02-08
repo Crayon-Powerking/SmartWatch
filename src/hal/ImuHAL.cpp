@@ -2,6 +2,8 @@
 #include "model/AppData.h"
 #include <math.h>
 
+// -- 构造与初始化 ----------------------------------------------------------------
+
 ImuHAL::ImuHAL() {
     data = {0};
 }
@@ -16,41 +18,45 @@ bool ImuHAL::begin() {
     }
 
     // 设置加速度量程: +-8G
-    mpu.setAccelerometerRange(MPU6050_RANGE_8_G); 
+    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
 
     // 设置陀螺仪量程: +-500度/秒
-    mpu.setGyroRange(MPU6050_RANGE_500_DEG);      
+    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
 
     // 设置硬件低通滤波器带宽: 21Hz
-    mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);   
+    mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
 
     return true;
 }
 
+// -- 数据更新逻辑 ----------------------------------------------------------------
+
 void ImuHAL::update() {
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
-    
+
     detectStep(a.acceleration.x, a.acceleration.y, a.acceleration.z);
+    
     // 互补滤波处理加速度数据
     data.ax = data.ax * filterAlpha + a.acceleration.x * (1 - filterAlpha);
     data.ay = data.ay * filterAlpha + a.acceleration.y * (1 - filterAlpha);
     data.az = data.az * filterAlpha + a.acceleration.z * (1 - filterAlpha);
-    
+
     // 陀螺仪和温度直接取值
-    data.gx = g.gyro.x;
-    data.gy = g.gyro.y;
-    data.gz = g.gyro.z;
+    data.gx   = g.gyro.x;
+    data.gy   = g.gyro.y;
+    data.gz   = g.gyro.z;
     data.temp = temp.temperature;
 
-    // 简易姿态解算
-    // 57.29578 是 180/PI 的值，用于把弧度转角度
+    // 简易姿态解算 (57.29578 是 180/PI 的值，用于把弧度转角度)
     // Pitch (俯仰): 绕 Y 轴旋转
     data.pitch = atan2(-data.ax, sqrt(data.ay * data.ay + data.az * data.az)) * 57.29578;
     
     // Roll (翻滚): 绕 X 轴旋转
     data.roll = atan2(data.ay, data.az) * 57.29578;
 }
+
+// -- 运动算法处理 ----------------------------------------------------------------
 
 void ImuHAL::detectStep(float ax, float ay, float az) {
     // 1. 计算合加速度向量长度 (Magnitude)
@@ -63,7 +69,7 @@ void ImuHAL::detectStep(float ax, float ay, float az) {
     if (magnitude > STEP_THRESHOLD) {
         unsigned long now = millis();
         // 3. 时间防抖: 人类走路最快约为 2-3 步/秒，所以间隔需 > 300ms
-        if (now - lastStepTime > STEP_DELAY_MS) {
+        if (now - lastStepTime > (unsigned long)STEP_DELAY_MS) {
             newStepDetected = true;
             lastStepTime = now;
         }
@@ -72,14 +78,14 @@ void ImuHAL::detectStep(float ax, float ay, float az) {
 
 bool ImuHAL::checkStep() {
     if (newStepDetected) {
-        newStepDetected = false; 
+        newStepDetected = false;
         return true;
     }
     return false;
 }
 
-// 抬手亮屏
 bool ImuHAL::isLiftWrist() {
-    bool isLooking = (data.az > 4.0 && data.ay > 1.5);
+    // 抬手亮屏判断：基于重力分量在 Z 和 Y 轴上的分布
+    bool isLooking = (data.az > 4.0f && data.ay > 1.5f);
     return isLooking;
 }

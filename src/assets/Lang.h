@@ -132,6 +132,7 @@ static const char* STR_LUCK_4[]        = {"Don't Deploy", "忌上线"};
 static const char* STR_ALARM_TITLE[]   = {"Alarm List",     "闹钟列表"};
 static const char* STR_ALARM_ADD[]     = {"Add Alarm",      "添加闹钟"};
 static const char* STR_ALARM_NEW[]     = {"NEW",            "新建"};
+static const char* STR_ALARM_WARNING[] = {"wake up",        "飞起来"};
 static const char* STR_ALARM_ON[]      = {"ON",             "开"};
 static const char* STR_ALARM_OFF[]     = {"OFF",            "关"};
 // --------------------------------------------------------------------------
