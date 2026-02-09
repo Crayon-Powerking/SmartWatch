@@ -5,13 +5,14 @@
 
 // -- 数据模型结构 ----------------------------------------------------------------
 struct AppDataModel {
-    // 掉电需保存的数据 (持久化)
-    SystemConfig systemConfig;      // 系统配置
-    GameRecords gameRecords;        // 游戏记录
-    RuntimeCache runtimeCache;      // 运行时缓存
-    AlarmSlot alarmSlots[MAX_ALARMS];
+    // 掉电需保存的数据
+    SystemConfig systemConfig;        // 系统配置
+    UserConfig userConfig;            // 用户配置
+    GameRecords gameRecords;          // 游戏记录
+    RuntimeCache runtimeCache;        // 运行时缓存
+    AlarmSlot alarmSlots[MAX_ALARMS]; // 闹钟数据
 
-    // 实时数据 (仅内存驻留)
+    // 实时数据
     int batteryLevel = 0;           // 当前电量百分比 (0-100)
     bool isWifiConnected = false;   // WiFi 连接状态
 };

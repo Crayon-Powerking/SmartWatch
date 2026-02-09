@@ -51,30 +51,8 @@ void AppController::checkClock() {
 }
 
 void AppController::checkWeather() {
-    if (weatherTaskHandle != NULL) return; 
-    xTaskCreate(weatherTask, "WeatherTask", 4096, this, 1, &weatherTaskHandle);
-}
-
-void AppController::weatherTask(void* parameter) {
-    AppController* app = (AppController*)parameter;
-    WeatherResult res = app->network.fetchWeather(WEATHER_KEY, AppData.runtimeCache.currentCityCode);
-    if (res.success) {
-        AppData.runtimeCache.temperature = res.temperature;
-        AppData.runtimeCache.weatherCode = res.code;
-        AppData.runtimeCache.lastWeatherTime = time(NULL);
-        app->timerWeather = millis(); 
-        app->storage.save();
-    } else {
-        app->timerWeather = millis() - 3600000 + 60000; 
-    }
-    app->weatherTaskHandle = NULL; 
-    vTaskDelete(NULL);
-}
-
-void AppController::forceWeatherUpdate() {
-    if (network.isConnected() && weatherTaskHandle == NULL) {
-        checkWeather(); 
-    }
+    network.requestWeatherUpdate(AppData.userConfig.weather_key, AppData.runtimeCache.currentCityCode);
+    timerWeather = millis(); 
 }
 
 void AppController::destroyMenuTree() {
@@ -171,7 +149,10 @@ void AppController::begin() {
     btnUp.begin();
     btnDown.begin();
     imu.begin();
-    network.begin(WIFI_SSID, WIFI_PASS);
+    network.begin();
+    if (strlen(AppData.userConfig.wifi_ssid) > 0) {
+        network.connect(AppData.userConfig.wifi_ssid, AppData.userConfig.wifi_pass);
+    }
 
     // 2. 构建菜单树并绑定按键
     MenuFactory::build(this);
@@ -215,17 +196,18 @@ void AppController::tick() {
     }
 
     // 基础时间服务
-    checkClock();
-    checkDayChange();
+    static unsigned long lastTimeCheck = 0;
+    if (now - lastTimeCheck > 1000) {
+        checkClock();
+        checkDayChange();
+        lastTimeCheck = now;
+    }
     
     // 自动保存
     if (now - timerSave > CONFIG_AUTO_SAVE_INTERVAL) {
         storage.save();
         timerSave = now;
     }
-
-    // 网络服务整合 (心跳维护 + 状态同步)
-    network.tick(); // 维持协议栈运行，确保自动重连机制生效
 
     static unsigned long lastNetCheck = 0;
     if (now - lastNetCheck > 1000) {
@@ -243,10 +225,18 @@ void AppController::tick() {
 
     // -- 4. 前台服务 (仅亮屏运行) -------------------------------------------------
 
-    // 天气更新 (网络已连且到达更新间隔)
-    if (AppData.isWifiConnected) {
+    if (network.isReady()) { 
         if (timerWeather == 0 || (now - timerWeather > CONFIG_WEATHER_INTERVAL)) {
             checkWeather();
+        }
+    }
+
+    if (network.isWeatherReady()) {
+        WeatherResult res = network.getWeatherResult();
+        if (res.success) {
+            AppData.runtimeCache.temperature = res.temperature;
+            AppData.runtimeCache.weatherCode = res.code;
+            AppData.runtimeCache.lastWeatherTime = time(NULL); // 记录更新时间
         }
     }
 
@@ -266,6 +256,7 @@ void AppController::tick() {
     }
 
     // -- 5. 渲染管线 (30FPS) ------------------------------------------------------
+    
     int targetFps = 30; // 默认系统帧率
     if (currentApp) {
         targetFps = currentApp->getFrameRate();

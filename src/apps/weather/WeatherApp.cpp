@@ -77,14 +77,14 @@ void WeatherApp::refreshWeather() {
     if (slots[activeSlotIndex].isEmpty) return;
     if (!forecast.success) { isLoading = true; render(); }
     
-    WeatherForecast newForecast = sys->network.fetchForecast(WEATHER_KEY, slots[activeSlotIndex].code);
+    WeatherForecast newForecast = sys->network.fetchForecast(AppData.userConfig.weather_key, slots[activeSlotIndex].code);
     if (newForecast.success) {
         this->forecast = newForecast;
         strcpy(this->forecast.cityCode, slots[activeSlotIndex].code);
         sys->storage.saveStruct("w_cache", this->forecast);
         sys->storage.putLong("w_cache_t", (long)time(NULL));
         strcpy(AppData.runtimeCache.currentCityCode, slots[activeSlotIndex].code);
-        sys->forceWeatherUpdate();
+        sys->network.requestWeatherUpdate(AppData.userConfig.weather_key, slots[activeSlotIndex].code);
     }
     isLoading = false;
     render();
@@ -281,6 +281,7 @@ void WeatherApp::onRun(AppController* sys) {
     selectionSmooth = 0.0f; 
     pendingWeatherUpdate = false; 
 
+    setFrameRate(60);
     loadSlots();
     
     // 自动刷新逻辑

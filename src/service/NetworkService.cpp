@@ -2,37 +2,100 @@
 
 NetworkService::NetworkService() {}
 
-// -- 连接与初始化 ----------------------------------------------------------------
+// -- 核心连接逻辑 ----------------------------------------------------------------
 
-void NetworkService::begin(const char* ssid, const char* password) {
-    WiFi.mode(WIFI_STA);
+void NetworkService::begin() {
+    WiFi.mode(WIFI_STA); 
+    WiFi.setHostname("ESP32-SmartWatch");
+}
+
+void NetworkService::connect(const char* ssid, const char* password) {
+    if (isConnected()) {
+        WiFi.disconnect();
+    }
+    _wifiConnected = false;
     WiFi.begin(ssid, password);
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+}
+
+void NetworkService::stop() {
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    _wifiConnected = false;
 }
 
 bool NetworkService::isConnected() {
     return WiFi.status() == WL_CONNECTED;
 }
 
-void NetworkService::tick() {
-    if (isConnected() && !_connected) {
-        _connected = true;
-        configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-    } else if (!isConnected() && _connected) {
-        _connected = false;
+bool NetworkService::isReady() {
+    return isConnected() && (time(nullptr) > 1000000000l);
+}
+
+// -- 状态维护 --------------------------------------------------------------------
+
+void NetworkService::update() {
+    unsigned long now = millis();
+    if (now - _lastCheckTime > CHECK_INTERVAL) {
+        _lastCheckTime = now;
+        bool currentStatus = isConnected();
+
+        if (currentStatus && !_wifiConnected) {
+            _wifiConnected = true;
+            Serial.println("WiFi Connected!");
+        } else if (!currentStatus && _wifiConnected) {
+            _wifiConnected = false;
+            Serial.println("WiFi Lost...");
+        }
     }
 }
 
-// -- 天气 API 请求 ---------------------------------------------------------------
+// -- 异步天气任务 ----------------------------------------------------------------
+
+void NetworkService::requestWeatherUpdate(const char* key, const char* city) {
+    if (!isReady()) return;
+    if (_weatherTaskHandle != nullptr) return; // 任务已在运行
+
+    _targetKey = String(key);
+    _targetCity = String(city);
+
+    xTaskCreate(weatherTask, "Net_Weather", 4096, this, 1, &_weatherTaskHandle);
+}
+
+void NetworkService::weatherTask(void* parameter) {
+    NetworkService* self = (NetworkService*)parameter;
+    
+    // 执行耗时请求
+    WeatherResult res = self->fetchWeather(self->_targetKey.c_str(), self->_targetCity.c_str());
+
+    if (res.success) {
+        self->_tempWeather = res;
+        self->_weatherReady = true;
+    }
+
+    self->_weatherTaskHandle = nullptr;
+    vTaskDelete(NULL);
+}
+
+bool NetworkService::isWeatherReady() {
+    return _weatherReady;
+}
+
+WeatherResult NetworkService::getWeatherResult() {
+    _weatherReady = false;
+    return _tempWeather;
+}
+
+// -- 具体 API 请求实现 ------------------------------------------------------------
 
 WeatherResult NetworkService::fetchWeather(const char* key, const char* city) {
     WeatherResult result = {false, 0, 99};
-
     if (!isConnected()) return result;
 
     WiFiClientSecure client;
     client.setInsecure();
-
     HTTPClient http;
+
     String url = "https://api.seniverse.com/v3/weather/now.json?key=" + String(key) +
                  "&location=" + String(city) + "&language=en&unit=c";
 
@@ -41,9 +104,7 @@ WeatherResult NetworkService::fetchWeather(const char* key, const char* city) {
         if (httpCode == HTTP_CODE_OK) {
             String payload = http.getString();
             JsonDocument doc;
-            DeserializationError error = deserializeJson(doc, payload);
-
-            if (!error) {
+            if (!deserializeJson(doc, payload)) {
                 result.temperature = doc["results"][0]["now"]["temperature"].as<int>();
                 result.code = doc["results"][0]["now"]["code"].as<int>();
                 result.success = true;

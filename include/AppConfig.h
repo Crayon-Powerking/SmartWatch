@@ -17,15 +17,6 @@
 #define PIN_BTN_UP                  13      // 向上 (D13)
 #define PIN_BTN_DOWN                14      // 向下 (D14)
 
-// -- 用户配置 (User Configuration) -----------------------------------------------
-
-// WiFi 设置
-#define WIFI_SSID                   "User"
-#define WIFI_PASS                   "Crayon666"
-
-// 天气 API 设置 (心知天气)
-#define WEATHER_KEY                 "SvagmpHNnsfuweKoz"
-
 // -- 系统定时配置 (单位: 毫秒) ---------------------------------------------------
 
 // 闹铃显示时长 (1分钟 = 60,000 ms)

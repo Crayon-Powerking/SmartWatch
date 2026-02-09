@@ -13,6 +13,13 @@ struct SystemConfig {
     int sleepTimeout = 15;          // 睡眠超时(秒)
 };
 
+// -- 用户配置 --------------------------------------------------------------------
+struct UserConfig {
+    char wifi_ssid  [32] = "User";
+    char wifi_pass  [64] = "Crayon666";
+    char weather_key[64] = "SvagmpHNnsfuweKoz";
+};
+
 // -- 游戏记录 --------------------------------------------------------------------
 struct GameRecords {
     long dinoHighScore = 0;         // 恐龙游戏高分记录

@@ -17,7 +17,7 @@ public:
 
     void hide() {
         isVisible = false;
-        state = STATE_EXITING; // 或者直接重置状态
+        state = STATE_EXITING;
     }
     
     void draw(DisplayHAL* display) {
