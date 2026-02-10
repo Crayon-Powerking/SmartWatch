@@ -19,11 +19,12 @@ void AppController::wakeUp() {
         isSleeping = false;
         display.setPowerSave(0);
     }
+    lastActiveTime = millis();
 }
 
 void AppController::checkDayChange() {
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 0) || timeinfo.tm_year < 120) return;
+    if (!getLocalTime(&timeinfo, 50) || timeinfo.tm_year < 120) return;
     int currentDayCode = (timeinfo.tm_year + 1900) * 10000 + (timeinfo.tm_mon + 1) * 100 + timeinfo.tm_mday;
     if (currentDayCode != AppData.runtimeCache.lastStepDay) {        
         AppData.runtimeCache.stepCount = 0;
@@ -34,7 +35,7 @@ void AppController::checkDayChange() {
 
 void AppController::checkClock() {
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 0)) return;
+    if (!getLocalTime(&timeinfo, 50)) return;
     if (timeinfo.tm_min == lastAlarmMinute) return; 
     lastAlarmMinute = timeinfo.tm_min;
     for (int i = 0; i < MAX_ALARMS; i++) {
@@ -149,6 +150,30 @@ void AppController::begin() {
     btnUp.begin();
     btnDown.begin();
     imu.begin();
+
+    ble.begin("ESP32-Watch");
+    ble.setConfigCallback([this](BLEConfigData config) {
+        // 1. WiFi 配置
+        if (config.hasWifi) {
+            strncpy(AppData.userConfig.wifi_ssid, config.ssid, 31);
+            strncpy(AppData.userConfig.wifi_pass, config.pass, 63);
+            storage.save();
+            
+            // 收到立即连接，并弹窗提示
+            network.connect(config.ssid, config.pass);
+            wakeUp();
+            toast.show(STR_WIFI[AppData.systemConfig.languageIndex]); 
+        }
+
+        // 2. Weather Key
+        if (config.hasKey) {
+            strncpy(AppData.userConfig.weather_key, config.key, 63);
+            storage.save();
+            wakeUp();
+            toast.show(STR_BLE[AppData.systemConfig.languageIndex]);
+        }
+    });
+
     network.begin();
     if (strlen(AppData.userConfig.wifi_ssid) > 0) {
         network.connect(AppData.userConfig.wifi_ssid, AppData.userConfig.wifi_pass);
@@ -202,18 +227,19 @@ void AppController::tick() {
         checkDayChange();
         lastTimeCheck = now;
     }
-    
+
+    // 检查WiFi 与 蓝牙 连接状态
+    static unsigned long lastNetCheck = 0;
+    if (now - lastNetCheck > 1000) {
+        AppData.isWifiConnected = network.isConnected(); 
+        AppData.isBLEConnected = ble.isConnected();
+        lastNetCheck = now;
+    }
+
     // 自动保存
     if (now - timerSave > CONFIG_AUTO_SAVE_INTERVAL) {
         storage.save();
         timerSave = now;
-    }
-
-    static unsigned long lastNetCheck = 0;
-    if (now - lastNetCheck > 1000) {
-        // 每秒同步一次连接状态，避免高频调用底层 API 拖慢系统
-        AppData.isWifiConnected = network.isConnected(); 
-        lastNetCheck = now;
     }
 
     // -- 3. 睡眠门控 --------------------------------------------------------------

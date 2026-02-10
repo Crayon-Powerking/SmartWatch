@@ -42,10 +42,8 @@ void NetworkService::update() {
 
         if (currentStatus && !_wifiConnected) {
             _wifiConnected = true;
-            Serial.println("WiFi Connected!");
         } else if (!currentStatus && _wifiConnected) {
             _wifiConnected = false;
-            Serial.println("WiFi Lost...");
         }
     }
 }
@@ -92,11 +90,10 @@ WeatherResult NetworkService::fetchWeather(const char* key, const char* city) {
     WeatherResult result = {false, 0, 99};
     if (!isConnected()) return result;
 
-    WiFiClientSecure client;
-    client.setInsecure();
+    WiFiClient client;
     HTTPClient http;
 
-    String url = "https://api.seniverse.com/v3/weather/now.json?key=" + String(key) +
+    String url = "http://api.seniverse.com/v3/weather/now.json?key=" + String(key) +
                  "&location=" + String(city) + "&language=en&unit=c";
 
     if (http.begin(client, url)) {
@@ -119,17 +116,16 @@ WeatherForecast NetworkService::fetchForecast(const char* key, const char* city)
     WeatherForecast result;
     result.success = false;
 
-    if (!isConnected()) return result;
-
-    WiFiClientSecure client;
-    client.setInsecure();
-
+    if (!isConnected()) {
+        return result;
+    }
+    WiFiClient client;
     HTTPClient http;
-    String url = "https://api.seniverse.com/v3/weather/daily.json?key=" + String(key) +
+    String url = "http://api.seniverse.com/v3/weather/daily.json?key=" + String(key) +
                  "&location=" + String(city) + "&language=en&unit=c&start=0&days=3";
-
     if (http.begin(client, url)) {
         int httpCode = http.GET();
+
         if (httpCode == HTTP_CODE_OK) {
             String payload = http.getString();
             JsonDocument doc;

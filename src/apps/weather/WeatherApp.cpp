@@ -385,6 +385,7 @@ void WeatherApp::renderMainView() {
     char buf[32];
     sys->display.setFontMode(1); 
 
+    // 1. 绘制顶部 Header (返回按钮 + 城市名)
     if (selectedIndex == 0 && viewState == VIEW_MAIN) {
         sys->display.setDrawColor(1);
         sys->display.drawBox(x, 0, 40, 14);
@@ -402,9 +403,31 @@ void WeatherApp::renderMainView() {
     sys->display.drawText(x + 50, 11, buf);
     sys->display.drawLine(x, 15, x + 128, 15);
 
-    if (isLoading) { sys->display.drawText(x + 40, 40, STR_LOADING[L]); return; }
-    if (!forecast.success) { sys->display.drawText(x + 10, 30, STR_NET_ERR[L]); return; }
+    // 2. 状态检查
+    // 正在加载
+    if (isLoading) { 
+        sys->display.drawText(x + 40, 40, STR_LOADING[L]); 
+        return; 
+    }
 
+    // 网络连接检查
+    if (!sys->network.isConnected()) { 
+        sys->display.drawText(x + 30, 40, STR_NET_ERR[L]); 
+        return; 
+    }
+
+    // 天气密钥检查
+    if (strlen(AppData.userConfig.weather_key) == 0) {
+        sys->display.drawText(x + 20, 40, STR_WEATHER_KEY[L]);
+        return; 
+    }
+
+    if (!forecast.success) { 
+        sys->display.drawText(x + 30, 40, STR_DATA_ERROR[L]); 
+        return; 
+    }
+
+    // 3. 绘制天气数据
     int startY = 17;
     int rowH = 16; 
     int tildeX = x + 44;
@@ -431,7 +454,6 @@ void WeatherApp::renderMainView() {
         sys->display.drawIcon(x + 112, rowBaseY - 1, 16, 16, iconPtr);
     }
 }
-
 void WeatherApp::renderSlotsView() {
     int baseX = (int)slideX + 128; // 偏移量，ViewSlots 在第二个屏
     int L = AppData.systemConfig.languageIndex;

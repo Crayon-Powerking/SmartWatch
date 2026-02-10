@@ -15,9 +15,9 @@ struct SystemConfig {
 
 // -- 用户配置 --------------------------------------------------------------------
 struct UserConfig {
-    char wifi_ssid  [32] = "User";
-    char wifi_pass  [64] = "Crayon666";
-    char weather_key[64] = "SvagmpHNnsfuweKoz";
+    char wifi_ssid  [32] = "";
+    char wifi_pass  [64] = "";
+    char weather_key[64] = "";
 };
 
 // -- 游戏记录 --------------------------------------------------------------------

@@ -30,7 +30,7 @@ void StorageService::load() {
 
 void StorageService::save() {
     saveStruct("sys_cfg", AppData.systemConfig);
-    saveStruct("user_cfg", AppData.systemConfig);
+    saveStruct("user_cfg", AppData.userConfig);
     saveStruct("game_rec", AppData.gameRecords);
     saveStruct("rt_cache", AppData.runtimeCache);
 }

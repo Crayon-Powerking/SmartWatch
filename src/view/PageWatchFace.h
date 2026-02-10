@@ -21,11 +21,19 @@ private:
         display->setFont(u8g2_font_6x10_tf);
         display->drawText(2, 9, getDateString().c_str());
 
+        // 绘制 蓝牙图标
+        if (AppData.isBLEConnected) {
+            display->setFont(u8g2_font_open_iconic_embedded_1x_t);
+            display->drawGlyph(86, 9, 74); 
+        }
+
+        // 绘制 WIFI图标
         if (AppData.isWifiConnected) {
             display->setFont(u8g2_font_open_iconic_www_1x_t); 
             display->drawGlyph(96, 9, 72); 
         }
 
+        // 绘制电池条
         display->drawFrame(106, 0, 18, 10);
         display->drawBox(124, 3, 2, 4);
         int width = constrain((AppData.batteryLevel * 14) / 100, 0, 14);
@@ -33,6 +41,7 @@ private:
         display->drawLine(0, 12, 128, 12);
     }
 
+    // 绘制时间
     void drawTimeArea(DisplayHAL* display) {
         String timeStr = getTimeString();
         char secStr[5];
@@ -46,6 +55,7 @@ private:
         display->drawText(8 + wMain + 2, 44, secStr);
     }
 
+    // 绘制底层状态栏
     void drawWeatherStepBar(DisplayHAL* display) {
         display->setFont(u8g2_font_ncenB08_tr); 
         
@@ -76,7 +86,7 @@ private:
 
     String getTimeString() {
         struct tm info;
-        if(!getLocalTime(&info, 0)) return "13:14";
+        if(!getLocalTime(&info, 50)) return "13:14";
         char buf[10];
         sprintf(buf, "%02d:%02d", info.tm_hour, info.tm_min);
         return String(buf);
@@ -84,7 +94,7 @@ private:
 
     String getDateString() {
         struct tm info;
-        if(!getLocalTime(&info, 0)) return "05-20 Mon";
+        if(!getLocalTime(&info, 50)) return "05-20 Mon";
         char buf[32];
         strftime(buf, 32, "%m-%d %a", &info);
         return String(buf);
@@ -92,6 +102,6 @@ private:
 
     int getSecond() {
         struct tm info;
-        return getLocalTime(&info, 0) ? info.tm_sec : 0;
+        return getLocalTime(&info, 50) ? info.tm_sec : 0;
     }
 };

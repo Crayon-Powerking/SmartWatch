@@ -11,19 +11,24 @@ static const char* STR_SAVED[]      = {"Saved",        "已保存"};
 static const char* STR_LOADING[]    = {"Loading...",   "正在加载..."};
 static const char* STR_NO_DATA[]    = {"No Data",      "暂无数据"};
 static const char* STR_NET_ERR[]    = {"Net Error",    "网络错误"};
+static const char* STR_DATA_ERROR[] = {"DATA Error",   "数据错误"};
 static const char* STR_EXIT[]       = {"EXIT",         "退出"};
 static const char* STR_DEL[]        = {"DEL",          "删除"};
+static const char* STR_WIFI[]       = {"WIFI OK!",     "网络配置成功"};
+static const char* STR_BLE[]        = {"weather OK!",  "密钥接收成功"};
 //  --------------------------------------------------------------------------
 
 // -- 菜单主界面 --------------------------------------------------------------
+static const char* STR_Exit[]       = {"Exit",         "菜单退出"};
 static const char* STR_SETTINGS[]   = {"Settings",     "系统设置"};
 static const char* STR_WEATHER[]    = {"Weather",      "天气预报"};
-static const char* STR_TOOLS[]      = {"Tools",        "实用工具"};
 static const char* STR_GAME[]       = {"Games",        "娱乐游戏"};
-static const char* STR_ABOUT[]      = {"About",        "关于本机"};
-static const char* STR_ALARM[]      = {"Alarm",        "闹钟提醒"};
 static const char* STR_CALENDAR[]   = {"Calendar",     "日历查看"};
-static const char* STR_Exit[]       = {"Exit",         "菜单退出"};
+static const char* STR_ALARM[]      = {"Alarm",        "闹钟提醒"};
+static const char* STR_BLUETOOTH[]  = {"BlueTooth",    "蓝牙连接"};
+static const char* STR_TOOLS[]      = {"Tools",        "实用工具"};
+static const char* STR_ABOUT[]      = {"About",        "关于本机"};
+
 // --------------------------------------------------------------------------
 
 // -- 设置相关 ---------------------------------------------------------------
@@ -33,6 +38,10 @@ static const char* STR_CURSOR[]     = {"Cursor",       "光标设置"};
 static const char* STR_SOLID[]      = {"Solid",        "实心矩形"};
 static const char* STR_HOLLOW[]     = {"Hollow",       "空心矩形"};
 static const char* STR_INVERSE[]    = {"Inverse",      "反色设置"};
+static const char* STR_WIFI_ON[]    = {"WiFi: ON",     "无线网: 开"};
+static const char* STR_WIFI_OFF[]   = {"WiFi: OFF",    "无线网: 关"};
+static const char* STR_BLE_ON[]     = {"BLE: ON",      "蓝牙: 开"};
+static const char* STR_BLE_OFF[]    = {"BLE: OFF",     "蓝牙: 关"};
 static const char* STR_SLEEP_VAL[]  = {"Sleep Time",   "息屏时间"};
 static const char* STR_SLEEP[2][5]  = {
     {"No Sleep", "15s", "30s", "1min", "5min"},
@@ -42,6 +51,7 @@ static const char* STR_SLEEP[2][5]  = {
 
 // -- 天气相关 ---------------------------------------------------------------
 // 城市管理
+static const char* STR_WEATHER_KEY[]= {"No API Key",   "无天气密钥"};
 static const char* STR_CITY_SELECT[]= {"City Slots",   "城市管理"};
 static const char* STR_ADD_CITY[]   = {"+ Add City",   "+ 添加城市"};
 static const char* STR_EMPTY_SLOT[] = {"[ Empty ]",    "[ 空槽位 ]"};

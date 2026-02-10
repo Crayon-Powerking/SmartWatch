@@ -1,6 +1,8 @@
 #include "apps/settings/SettingsBuilder.h"
 #include "controller/AppController.h"
 #include "assets/Lang.h"
+#include <cstdio>
+#include <WiFi.h>
 
 // -- 常量定义 --------------------------------------------------------------------
 static const int MAX_LANG_COUNT = 2;
@@ -9,6 +11,15 @@ static const int MAX_SLEEP_COUNT = 5;
 
 // 单位：秒
 static const int SLEEP_OPTS[] = { 0, 15, 30, 60, 300 };
+static char sleepMenuItemTitle[32];
+
+// -- 辅助函数 --------------------------------------------------------------------
+String getSleepLabel(int sec, int lang) {
+    for (int i = 0; i < MAX_SLEEP_COUNT; i++) {
+        if (SLEEP_OPTS[i] == sec) return String(STR_SLEEP[lang][i]);
+    }
+    return "?";
+}
 
 // -- 主构建函数 ------------------------------------------------------------------
 
@@ -16,6 +27,16 @@ MenuPage* SettingsBuilder::build(AppController* sys) {
     int L = AppData.systemConfig.languageIndex;
 
     MenuPage* page = sys->createPage(STR_SETTINGS[L], LAYOUT_LIST);
+
+    int currentSec = AppData.systemConfig.sleepTimeout;
+    int targetIndex = 0;
+    for (int i = 0; i < MAX_SLEEP_COUNT; i++) {
+        if (SLEEP_OPTS[i] == currentSec) {
+            targetIndex = i;
+            break;
+        }
+    }
+    snprintf(sleepMenuItemTitle, sizeof(sleepMenuItemTitle), "%s: %s", STR_SLEEP_VAL[L], STR_SLEEP[L][targetIndex]);
 
     // 1. 返回按钮
     page->add(STR_BACK[L], nullptr, [sys]() {
@@ -39,8 +60,51 @@ MenuPage* SettingsBuilder::build(AppController* sys) {
     });
 
     // 5. 睡眠时间
-    page->add(STR_SLEEP_VAL[L], nullptr, [sys, page]() {
+    String currentTitle = String(STR_SLEEP_VAL[L]) + ": " + getSleepLabel(AppData.systemConfig.sleepTimeout, L);
+    page->add(currentTitle, nullptr, [sys, page]() {
         buildSleepPage(sys, page);
+    });
+
+
+    // 6. WIFI 设置
+    bool isWifiOn = (WiFi.getMode() != WIFI_OFF);
+    const char* wifititle = isWifiOn ? STR_WIFI_ON[L] : STR_WIFI_OFF[L];
+    page->add(wifititle, nullptr, [sys, page, L]() {
+        bool currentOn = (WiFi.getMode() != WIFI_OFF);
+        if (currentOn) {
+            sys->network.stop(); 
+        } else {
+            sys->network.begin(); 
+            sys->network.connect(AppData.userConfig.wifi_ssid, AppData.userConfig.wifi_pass);
+        }
+        if (page) {
+            for (auto &item : page->items) {
+                if (item.title == STR_WIFI_ON[L] || item.title == STR_WIFI_OFF[L]) {
+                    item.title = currentOn ? STR_WIFI_OFF[L] : STR_WIFI_ON[L];
+                    break;
+                }
+            }
+        }
+    });
+
+    // 7. 蓝牙设置
+    bool isBLEOn = sys->ble.isServiceRunning();
+    const char* bleTitle = isBLEOn ? STR_BLE_ON[L] : STR_BLE_OFF[L];
+    page->add(bleTitle, nullptr, [sys, page, L]() {
+        bool currentOn = sys->ble.isServiceRunning();
+        if (currentOn) {
+            sys->ble.stop();
+        } else {
+            sys->ble.begin("ESP32-Watch");
+        }
+        if (page) {
+            for (auto &item : page->items) {
+                if (item.title == STR_BLE_ON[L] || item.title == STR_BLE_OFF[L]) {
+                    item.title = currentOn ? STR_BLE_OFF[L] : STR_BLE_ON[L];
+                    break;
+                }
+            }
+        }
     });
 
     return page;
@@ -104,12 +168,19 @@ void SettingsBuilder::buildSleepPage(AppController* sys, MenuPage* parent) {
 
     for (int i = 0; i < MAX_SLEEP_COUNT; i++) {
         int val = SLEEP_OPTS[i];
-
-        subPage->add(STR_SLEEP[L][i], nullptr, [sys, val]() {
+        subPage->add(STR_SLEEP[L][i], nullptr, [sys, parent, val, i, L]() {
             if (AppData.systemConfig.sleepTimeout != val) {
                 AppData.systemConfig.sleepTimeout = val;
-                sys->processInput();
                 sys->storage.save();
+                if (parent) {
+                    String prefix = String(STR_SLEEP_VAL[L]); 
+                    for (auto &item : parent->items) {
+                        if (item.title.startsWith(prefix)) {
+                            item.title = prefix + ": " + String(STR_SLEEP[L][i]);
+                            break; 
+                        }
+                    }
+                }
                 sys->menuCtrl.back();
             } else {
                 sys->menuCtrl.back();

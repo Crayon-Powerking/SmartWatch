@@ -15,6 +15,7 @@ struct AppDataModel {
     // 实时数据
     int batteryLevel = 0;           // 当前电量百分比 (0-100)
     bool isWifiConnected = false;   // WiFi 连接状态
+    bool isBLEConnected = false;    // 蓝牙连接状态
 };
 
 // -- 全局变量声明 ----------------------------------------------------------------

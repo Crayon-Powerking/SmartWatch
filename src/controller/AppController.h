@@ -8,6 +8,7 @@
 #include "hal/DisplayHAL.h"
 #include "hal/InputHAL.h"
 #include "hal/ImuHAL.h"
+#include "service/BluetoothService.h"
 #include "service/NetworkService.h"
 #include "service/StorageService.h"
 #include "view/PageWatchFace.h"
@@ -43,6 +44,7 @@ public:
 
     // 公开成员，方便 App 访问硬件
     MenuController menuCtrl; 
+    BluetoothService ble;
     StorageService storage;
     NetworkService network;
 
