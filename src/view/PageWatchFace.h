@@ -10,16 +10,24 @@
 class PageWatchFace : public Page {
 public:
     void draw(DisplayHAL* display) override {
-        drawStatusBar(display);
-        drawTimeArea(display);
+        struct tm info;
+        bool hasTime = getLocalTime(&info, 10);
+        drawStatusBar(display, info, hasTime);
+        drawTimeArea(display, info, hasTime);
         drawWeatherStepBar(display);
     }
 
 private:
     // -- 内部辅助绘制 ------------------------------------------------------------
-    void drawStatusBar(DisplayHAL* display) {
+    void drawStatusBar(DisplayHAL* display, struct tm& info, bool hasTime) {
         display->setFont(u8g2_font_6x10_tf);
-        display->drawText(2, 9, getDateString().c_str());
+        char buf[32];
+        if (hasTime) {
+            strftime(buf, 32, "%m-%d %a", &info);
+        } else {
+            strcpy(buf, "05-20 ---"); // 没对时显示占位符
+        }
+        display->drawText(2, 9, buf);
 
         // 绘制 蓝牙图标
         if (AppData.isBLEConnected) {
@@ -42,15 +50,22 @@ private:
     }
 
     // 绘制时间
-    void drawTimeArea(DisplayHAL* display) {
-        String timeStr = getTimeString();
+    void drawTimeArea(DisplayHAL* display, struct tm& info, bool hasTime) {
+        char timeStr[10];
         char secStr[5];
-        sprintf(secStr, ":%02d", getSecond());
+
+        if (hasTime) {
+            sprintf(timeStr, "%02d:%02d", info.tm_hour, info.tm_min);
+            sprintf(secStr, ":%02d", info.tm_sec);
+        } else {
+            strcpy(timeStr, "13:14");
+            strcpy(secStr, ":00");
+        }
 
         display->setFont(u8g2_font_helvB24_tf); 
-        display->drawText(8, 44, timeStr.c_str());
+        display->drawText(8, 44, timeStr);
         
-        int wMain = display->getStrWidth(timeStr.c_str());
+        int wMain = display->getStrWidth(timeStr);
         display->setFont(u8g2_font_helvB14_tf); 
         display->drawText(8 + wMain + 2, 44, secStr);
     }
@@ -82,26 +97,5 @@ private:
         if (code <= 19) return icon_weather_rain;
         if (code <= 25) return icon_weather_snow;
         return icon_weather_fog;
-    }
-
-    String getTimeString() {
-        struct tm info;
-        if(!getLocalTime(&info, 50)) return "13:14";
-        char buf[10];
-        sprintf(buf, "%02d:%02d", info.tm_hour, info.tm_min);
-        return String(buf);
-    }
-
-    String getDateString() {
-        struct tm info;
-        if(!getLocalTime(&info, 50)) return "05-20 Mon";
-        char buf[32];
-        strftime(buf, 32, "%m-%d %a", &info);
-        return String(buf);
-    }
-
-    int getSecond() {
-        struct tm info;
-        return getLocalTime(&info, 50) ? info.tm_sec : 0;
     }
 };

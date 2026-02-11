@@ -41,9 +41,6 @@ void MenuFactory::build(AppController* sys) {
 
     // 闹钟
     sys->rootMenu->add(STR_ALARM[lang], icon_alarm, [sys](){ sys->startApp(new AlarmApp()); });
-    
-    // 蓝牙
-    sys->rootMenu->add(STR_BLUETOOTH[lang], icon_bluetooth, [sys](){  });
 
     // 工具
     sys->rootMenu->add(STR_TOOLS[lang], icon_tool, [sys, toolsPage](){ sys->menuCtrl.enter(toolsPage); });

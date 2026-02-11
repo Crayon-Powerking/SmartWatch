@@ -43,6 +43,13 @@ void AboutApp::initInfo() {
     String mac = WiFi.macAddress();
     lines.push_back("MAC Address:");
     lines.push_back(mac); 
+    lines.push_back("BLE MAC:");
+    uint8_t baseMac[6];
+    esp_read_mac(baseMac, ESP_MAC_BT); // 获取蓝牙 MAC
+    char btMacStr[18];
+    snprintf(btMacStr, sizeof(btMacStr), "%02X:%02X:%02X:%02X:%02X:%02X",
+             baseMac[0], baseMac[1], baseMac[2], baseMac[3], baseMac[4], baseMac[5]);
+    lines.push_back(btMacStr);
 
     lines.push_back("");
 
@@ -88,6 +95,7 @@ void AboutApp::onRun(AppController* sys) {
     this->sys = sys;
     this->isExiting = false;
     
+    setFrameRate(60);
     // 重置滚动状态
     currentScrollY = 0.0f;
     targetScrollY = 0.0f;

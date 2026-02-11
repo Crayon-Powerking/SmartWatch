@@ -25,7 +25,6 @@ static const char* STR_WEATHER[]    = {"Weather",      "天气预报"};
 static const char* STR_GAME[]       = {"Games",        "娱乐游戏"};
 static const char* STR_CALENDAR[]   = {"Calendar",     "日历查看"};
 static const char* STR_ALARM[]      = {"Alarm",        "闹钟提醒"};
-static const char* STR_BLUETOOTH[]  = {"BlueTooth",    "蓝牙连接"};
 static const char* STR_TOOLS[]      = {"Tools",        "实用工具"};
 static const char* STR_ABOUT[]      = {"About",        "关于本机"};
 

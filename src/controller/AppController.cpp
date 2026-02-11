@@ -23,8 +23,9 @@ void AppController::wakeUp() {
 }
 
 void AppController::checkDayChange() {
+    if (time(nullptr) < 1000000000) return;
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 50) || timeinfo.tm_year < 120) return;
+    if (!getLocalTime(&timeinfo, 0)) return;
     int currentDayCode = (timeinfo.tm_year + 1900) * 10000 + (timeinfo.tm_mon + 1) * 100 + timeinfo.tm_mday;
     if (currentDayCode != AppData.runtimeCache.lastStepDay) {        
         AppData.runtimeCache.stepCount = 0;
@@ -34,8 +35,9 @@ void AppController::checkDayChange() {
 }
 
 void AppController::checkClock() {
+    if (time(nullptr) < 1000000000) return;
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 50)) return;
+    if (!getLocalTime(&timeinfo, 0)) return;
     if (timeinfo.tm_min == lastAlarmMinute) return; 
     lastAlarmMinute = timeinfo.tm_min;
     for (int i = 0; i < MAX_ALARMS; i++) {
@@ -230,7 +232,7 @@ void AppController::tick() {
 
     // 检查WiFi 与 蓝牙 连接状态
     static unsigned long lastNetCheck = 0;
-    if (now - lastNetCheck > 1000) {
+    if (now - lastNetCheck > 5000) {
         AppData.isWifiConnected = network.isConnected(); 
         AppData.isBLEConnected = ble.isConnected();
         lastNetCheck = now;
