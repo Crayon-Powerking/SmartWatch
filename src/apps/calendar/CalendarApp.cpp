@@ -167,8 +167,18 @@ void CalendarApp::renderHolidayInfo() {
     sys->display.drawText(2, 26, getLocalizedHolidayName(cache.holiday.name));
 
     time_t now = time(NULL);
-    long diff = cache.holiday.targetTs - now;
-    int days = diff / 86400;
+    struct tm t_now;
+    localtime_r(&now, &t_now);
+    
+    t_now.tm_hour = 0;
+    t_now.tm_min = 0;
+    t_now.tm_sec = 0;
+    time_t todayMidnight = mktime(&t_now);
+
+    long targetTs = cache.holiday.targetTs;
+
+    long diff = targetTs - todayMidnight;
+    int days = (diff + 10) / 86400;
     if (days < 0) days = 0;
 
     char buf[16];

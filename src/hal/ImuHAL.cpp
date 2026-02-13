@@ -86,6 +86,6 @@ bool ImuHAL::checkStep() {
 
 bool ImuHAL::isLiftWrist() {
     // 抬手亮屏判断：基于重力分量在 Z 和 Y 轴上的分布
-    bool isLooking = (data.az > 4.0f && data.ay > 1.5f);
+    bool isLooking = (data.az > 2.0f && data.ay > 1.5f);
     return isLooking;
 }
